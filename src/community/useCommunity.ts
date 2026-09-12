@@ -27,10 +27,10 @@ export default function useCommunity() {
     detailError: null,
   })
 
-  const loadPosts = useCallback(async (page: number, postType?: string) => {
+  const loadPosts = useCallback(async (page: number, postType?: string, characters?: string[]) => {
     setState((s) => ({ ...s, loading: true, error: null }))
     try {
-      const res = await fetchPosts(page, PAGE_SIZE, postType)
+      const res = await fetchPosts(page, PAGE_SIZE, postType, characters)
       setState((s) => ({ ...s, posts: res.posts, total: res.total, page: res.page, loading: false }))
     } catch (e: any) {
       setState((s) => ({ ...s, loading: false, error: e.message }))

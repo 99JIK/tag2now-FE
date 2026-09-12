@@ -1,8 +1,8 @@
 import { formatTimeAgo } from '@/shared/util/timeFormat'
-import CharacterGridPicker from '@/shared/components/CharacterGridPicker'
+import { CharacterMultiPicker } from '@/shared/components/CharacterGridPicker'
 import PostTypeBadge from './PostTypeBadge'
 import type { LeaderboardEntry} from "@/shared/types";
-import { POST_TYPES } from "@/community/types";
+import { MAX_POST_CHARACTERS, POST_TYPES } from "@/community/types";
 import type {PostSummary} from "@/community/types";
 import AuthorBadge from './AuthorBadge'
 import { ChevronLeft, ChevronRight, MessageSquare, MessagesSquare, PenLine, RefreshCw, SlidersHorizontal, ThumbsDown, ThumbsUp } from 'lucide-react'
@@ -16,6 +16,8 @@ interface PostListProps {
   error: string | null
   postType: string
   onPostTypeChange: (type: string) => void
+  characters: string[]
+  onCharactersChange: (names: string[]) => void
   onPageChange: (page: number) => void
   onSelectPost: (id: number) => void
   onRefresh: () => void
@@ -25,7 +27,7 @@ interface PostListProps {
 
 export default function PostList({
   posts, total, page, pageSize, loading, error,
-  postType, onPostTypeChange, onPageChange, onSelectPost, onRefresh, onWrite, leaderboardEntries,
+  postType, onPostTypeChange, characters, onCharactersChange, onPageChange, onSelectPost, onRefresh, onWrite, leaderboardEntries,
 }: PostListProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
@@ -47,7 +49,7 @@ export default function PostList({
           <span className="community-filter-icon" aria-hidden="true"><SlidersHorizontal size={14} /></span>
           <div>
             <strong>게시글 분류</strong>
-            <small>보고 싶은 게시글 유형을 선택하세요.</small>
+            <small>게시글 유형과 캐릭터(최대 {MAX_POST_CHARACTERS}명)를 선택하세요.</small>
           </div>
         </div>
         <div className="community-filter-controls">
@@ -71,7 +73,7 @@ export default function PostList({
       </div>
 
       <div className="character-filter">
-        <CharacterGridPicker value={postType} onChange={onPostTypeChange} defaultValue="" />
+        <CharacterMultiPicker value={characters} onChange={onCharactersChange} max={MAX_POST_CHARACTERS} />
       </div>
 
       {loading && <p className="state-msg">로딩 중...</p>}
@@ -87,11 +89,11 @@ export default function PostList({
             <button
               key={post.id}
               onClick={() => onSelectPost(post.id)}
-              aria-label={`${post.title} — ${post.post_type}`}
+              aria-label={`${post.title} — ${[post.post_type, ...(post.characters ?? [])].join(', ')}`}
               className="post-row"
             >
               <span className="w-14 shrink-0 flex items-center justify-center">
-                <PostTypeBadge postType={post.post_type} />
+                <PostTypeBadge postType={post.post_type} characters={post.characters} />
               </span>
               <div className="flex flex-1 min-w-0 items-center font-bold">
                 <span className="text-sm text-txt truncate">{post.title}</span>

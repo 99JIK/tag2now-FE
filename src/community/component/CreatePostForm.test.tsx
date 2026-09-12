@@ -16,7 +16,7 @@ describe('video attachment', () => {
     fireEvent.change(screen.getByLabelText(/YouTube 영상 \(선택\)/), { target: { value: 'https://youtu.be/dQw4w9WgXcQ?si=tracking' } })
     expect(screen.getByTitle('첨부된 YouTube 영상 플레이어')).toHaveAttribute('src', 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?playsinline=1')
     fireEvent.click(screen.getByRole('button', { name: '작성' }))
-    await waitFor(() => expect(submit).toHaveBeenCalledWith('공략', '콤보 설명', '자유', 'dQw4w9WgXcQ'))
+    await waitFor(() => expect(submit).toHaveBeenCalledWith('공략', '콤보 설명', '자유', [], 'dQw4w9WgXcQ'))
   })
 
   it('blocks an invalid link and allows a text-only post after removing it', async () => {
@@ -27,6 +27,30 @@ describe('video attachment', () => {
     fireEvent.click(screen.getByRole('button', { name: 'YouTube 영상 제거' }))
     expect(screen.queryByTitle('첨부된 YouTube 영상 플레이어')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: '작성' }))
-    await waitFor(() => expect(submit).toHaveBeenCalledWith('공략', '콤보 설명', '자유', undefined))
+    await waitFor(() => expect(submit).toHaveBeenCalledWith('공략', '콤보 설명', '자유', [], undefined))
+  })
+})
+
+describe('character tags', () => {
+  const pick = (name: string) => fireEvent.click(screen.getByRole('button', { name: `Filter by ${name}` }))
+
+  it('keeps the post type while tagging a team, dropping the oldest pick past two', async () => {
+    const submit = setup()
+    fireEvent.click(screen.getByRole('button', { name: '공략' }))
+    pick('Jin')
+    pick('Kazuya')
+    pick('Lars')
+    expect(screen.getByRole('button', { name: 'Filter by Jin' })).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(screen.getByRole('button', { name: '작성' }))
+    await waitFor(() => expect(submit).toHaveBeenCalledWith('공략', '콤보 설명', '공략', ['Kazuya', 'Lars'], undefined))
+  })
+
+  it('untags a character on a second click', async () => {
+    const submit = setup()
+    pick('Jin')
+    pick('Kazuya')
+    pick('Jin')
+    fireEvent.click(screen.getByRole('button', { name: '작성' }))
+    await waitFor(() => expect(submit).toHaveBeenCalledWith('공략', '콤보 설명', '자유', ['Kazuya'], undefined))
   })
 })

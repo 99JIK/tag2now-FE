@@ -3,7 +3,7 @@ import YouTubeVideo from './YouTubeVideo'
 import CreatePostForm from './CreatePostForm'
 import { formatTimeAgo } from '@/shared/util/timeFormat'
 import { thumbPost, createComment, deletePost, updatePost } from '@/community/communityApi'
-import PostTypeBadge from './PostTypeBadge'
+import PostTypeBadge, { CharacterBadges } from './PostTypeBadge'
 import CommentTree from './CommentTree'
 import type { LeaderboardEntry } from "@/shared/types";
 import type { PostDetail } from '@/community/types'
@@ -26,9 +26,9 @@ export default function PostDetail({ post, username, onBack, onRefresh, ensureId
   const [thumbing, setThumbing] = useState(false)
   const [editing, setEditing] = useState(false)
 
-  const handleUpdate = async (title: string, body: string, postType: string, youtubeVideoId?: string) => {
+  const handleUpdate = async (title: string, body: string, postType: string, characters: string[], youtubeVideoId?: string) => {
     await ensureIdentity()
-    await updatePost(post.id, title, body, postType, youtubeVideoId)
+    await updatePost(post.id, title, body, postType, characters, youtubeVideoId)
     setEditing(false)
     onRefresh()
   }
@@ -81,6 +81,7 @@ export default function PostDetail({ post, username, onBack, onRefresh, ensureId
       <header className="post-detail-header">
         <div className="flex items-center gap-2 mb-2">
           <PostTypeBadge postType={post.post_type} size="md" />
+          {post.characters?.length ? <CharacterBadges characters={post.characters} size="md" /> : null}
           <span className="text-sm text-txt-dim">{formatTimeAgo(post.created_at)}</span>
           {username && post.author === username && (
             <div className="ml-auto flex gap-2">

@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { parseYouTubeVideoId } from '@/community/youtube'
 import YouTubeVideo from './YouTubeVideo'
-import CharacterGridPicker from '@/shared/components/CharacterGridPicker'
-import { POST_TYPES } from '@/community/types'
+import { CharacterMultiPicker } from '@/shared/components/CharacterGridPicker'
+import { MAX_POST_CHARACTERS, POST_TYPES } from '@/community/types'
 import { AlignLeft, ArrowLeft, FilePenLine, Send, Type, X } from 'lucide-react'
 
 interface CreatePostFormProps {
-  initialPost?: { title: string; body: string; post_type: string; youtube_video_id?: string | null }
-  onSubmit: (title: string, body: string, postType: string, youtubeVideoId?: string) => Promise<void>
+  initialPost?: { title: string; body: string; post_type: string; characters?: string[]; youtube_video_id?: string | null }
+  onSubmit: (title: string, body: string, postType: string, characters: string[], youtubeVideoId?: string) => Promise<void>
   onCancel: () => void
 }
 
@@ -16,6 +16,7 @@ export default function CreatePostForm({ onSubmit, onCancel, initialPost }: Crea
   const [title, setTitle] = useState(initialPost?.title ?? '')
   const [body, setBody] = useState(initialPost?.body ?? '')
   const [postType, setPostType] = useState(initialPost?.post_type ?? '자유')
+  const [characters, setCharacters] = useState<string[]>(initialPost?.characters ?? [])
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [youtubeUrl, setYoutubeUrl] = useState(initialPost?.youtube_video_id ? `https://www.youtube.com/watch?v=${initialPost.youtube_video_id}` : '')
@@ -27,7 +28,7 @@ export default function CreatePostForm({ onSubmit, onCancel, initialPost }: Crea
     setSubmitting(true)
     setError('')
     try {
-      await onSubmit(title.trim(), body.trim(), postType, youtubeVideoId ?? undefined)
+      await onSubmit(title.trim(), body.trim(), postType, characters, youtubeVideoId ?? undefined)
     } catch (error) {
       setError(error instanceof Error ? error.message : '저장하지 못했습니다. 다시 시도해 주세요.')
     } finally {
@@ -63,8 +64,9 @@ export default function CreatePostForm({ onSubmit, onCancel, initialPost }: Crea
         ))}
       </div>
 
+      <div className="field-heading"><span className="field-label">캐릭터 <span className="text-txt-dim">(선택)</span></span><small>다루는 팀 캐릭터를 최대 {MAX_POST_CHARACTERS}명까지 고르세요.</small></div>
       <div className="character-filter mb-4">
-        <CharacterGridPicker value={postType} onChange={setPostType} defaultValue="자유" />
+        <CharacterMultiPicker value={characters} onChange={setCharacters} max={MAX_POST_CHARACTERS} />
       </div>
 
       <div className="field-heading"><label htmlFor="post-title" className="field-label">제목</label><small>내용을 한눈에 이해할 수 있게 작성하세요.</small></div>

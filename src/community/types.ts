@@ -5,6 +5,7 @@ export interface PostSummary {
   title: string
   body: string
   post_type: string
+  characters?: string[]
   youtube_video_id?: string | null
   thumbs_up: number
   thumbs_down: number
@@ -35,6 +36,7 @@ export interface PostDetail {
   title: string
   body: string
   post_type: string
+  characters?: string[]
   youtube_video_id?: string | null
   thumbs_up: number
   thumbs_down: number
@@ -43,11 +45,13 @@ export interface PostDetail {
 }
 
 /**
- * The non-character post types, mirroring VALID_POST_TYPES in the backend's
+ * The post types, mirroring VALID_POST_TYPES in the backend's
  * community/models.py. That set is the authority — it rejects anything else —
  * so adding a type here alone yields a 422 on submit.
  *
- * Character names are also valid post types and come from the character
- * picker, not this list.
+ * Characters are not post types; they are tagged separately in `characters`.
  */
 export const POST_TYPES = ['자유', '건의', '공략'] as const
+
+/** A TTT2 team is two characters — mirrors MAX_POST_CHARACTERS in the backend. */
+export const MAX_POST_CHARACTERS = 2

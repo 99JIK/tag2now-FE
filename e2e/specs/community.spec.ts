@@ -30,6 +30,15 @@ test.describe('Community', () => {
     await requestPromise
   })
 
+  test('picking two characters filters by that team', async ({ page }) => {
+    await page.getByRole('button', { name: 'Filter by Jin', exact: true }).click()
+    const requestPromise = page.waitForRequest((req) =>
+      req.url().includes('/api/community/posts') && new URL(req.url()).searchParams.getAll('characters').length === 2
+    )
+    await page.getByRole('button', { name: 'Filter by Kazuya', exact: true }).click()
+    expect(new URL((await requestPromise).url()).searchParams.getAll('characters')).toEqual(['Jin', 'Kazuya'])
+  })
+
   test('clicking a post opens detail view', async ({ page }) => {
     await page.locator('button', { hasText: 'Best tag combos for Jin/Devil Jin' }).click()
 

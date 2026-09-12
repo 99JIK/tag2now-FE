@@ -23,6 +23,8 @@ export default function Community({ leaderboardEntries }: CommunityProps) {
   const { getUsername, ensureIdentity } = useIdentity()
   const [view, setView] = useState<View>('list')
   const [postType, setPostType] = useState('')
+  const [characters, setCharacters] = useState<string[]>([])
+  const reload = (page: number) => community.loadPosts(page, postType || undefined, characters).then()
 
   // A post id in the path is the whole trigger for the detail view, so it works
   // the same whether the reader clicked a row, pressed Back, or opened a shared
@@ -35,8 +37,8 @@ export default function Community({ leaderboardEntries }: CommunityProps) {
   const mode: 'detail' | View = showDetail ? 'detail' : view
 
   useEffect(() => {
-    community.loadPosts(1, postType || undefined).then()
-  }, [postType])
+    reload(1)
+  }, [postType, characters])
 
   useEffect(() => {
     if (!showDetail) return
@@ -50,27 +52,19 @@ export default function Community({ leaderboardEntries }: CommunityProps) {
   const handleBack = () => {
     community.closePost()
     navigate(pathOf('community'))
-    community.loadPosts(community.page, postType || undefined).then()
+    reload(community.page)
   }
 
-  const handlePostTypeChange = (type: string) => {
-    setPostType(type)
-  }
-
-  const handlePageChange = (page: number) => {
-    community.loadPosts(page, postType || undefined).then()
-  }
-
-  const handleCreatePost = async (title: string, body: string, type: string, youtubeVideoId?: string) => {
+  const handleCreatePost = async (title: string, body: string, type: string, team: string[], youtubeVideoId?: string) => {
     await ensureIdentity()
-    await createPost(title, body, type, youtubeVideoId)
+    await createPost(title, body, type, team, youtubeVideoId)
     setView('list')
-    community.loadPosts(1, postType || undefined).then()
+    reload(1)
   }
 
   const handleDeleted = () => {
     navigate(pathOf('community'))
-    community.loadPosts(community.page, postType || undefined).then()
+    reload(community.page)
   }
 
   return (
@@ -84,10 +78,12 @@ export default function Community({ leaderboardEntries }: CommunityProps) {
           loading={community.loading}
           error={community.error}
           postType={postType}
-          onPostTypeChange={handlePostTypeChange}
-          onPageChange={handlePageChange}
+          onPostTypeChange={setPostType}
+          characters={characters}
+          onCharactersChange={setCharacters}
+          onPageChange={reload}
           onSelectPost={handleSelectPost}
-          onRefresh={() => community.loadPosts(community.page, postType || undefined).then()}
+          onRefresh={() => reload(community.page)}
           onWrite={() => setView('create')}
           leaderboardEntries={leaderboardEntries}
         />
@@ -107,7 +103,7 @@ export default function Community({ leaderboardEntries }: CommunityProps) {
           onBack={handleBack}
           onRefresh={() => {
             community.refreshDetail()
-            community.loadPosts(community.page, postType || undefined).then()
+            reload(community.page)
           }}
           ensureIdentity={ensureIdentity}
           onDeleted={handleDeleted}
