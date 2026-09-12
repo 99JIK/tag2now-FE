@@ -5,6 +5,7 @@ import Stats from "@/stat/Stats"
 import Header from "@/shared/components/Header";
 import Footer from "@/shared/components/Footer";
 import PatchNotes from "@/shared/components/PatchNotes";
+import PlayerProfileCard from '@/shared/components/PlayerProfileCard'
 import { GROUP_ORDER, formatGroupName } from '@/config/tabConfig'
 import { firstRoomPath, isRoomTab as isRoomTabKey, pathOf } from '@/config/routes'
 import useActiveTab from '@/shared/hooks/useActiveTab'
@@ -43,6 +44,10 @@ export default function App() {
   const reservations = useReservations()
 
   const groups = rooms.data?.groups ?? {}
+  const roomUsers = useMemo(
+    () => Object.values(groups).flatMap(group => group.flatMap(room => room.users ?? [])),
+    [groups],
+  )
   const roomsLoaded = rooms.data !== null
   // Room tabs are part of the fixed layout: they render before rooms load and
   // survive a failed fetch, so the tab strip never shifts under the user.
@@ -110,14 +115,15 @@ export default function App() {
     <div className="app-shell">
       <a className="skip-link" href="#mainContent">본문으로 건너뛰기</a>
       <PatchNotes />
-      <Header totalUsers={rooms.data?.totalUsers} leaderboardEntries={lb.data?.entries} />
+      <Header totalUsers={rooms.data?.totalUsers} />
       <div className="app-layout">
         <aside className="app-sidebar" aria-label="서비스 메뉴">
-          <div className="sidebar-heading">
-            <span>Navigation</span>
-            <ChevronRight size={14} aria-hidden="true" />
-          </div>
-          <nav className="app-nav" role="tablist" aria-label="Main navigation">
+          <div className="sidebar-nav-card">
+            <div className="sidebar-heading">
+              <span>Navigation</span>
+              <ChevronRight size={14} aria-hidden="true" />
+            </div>
+            <nav className="app-nav" role="tablist" aria-label="Main navigation">
             {primaryTabs.map((t) => (
               (() => {
                 const Icon = tabIcon(t.key)
@@ -156,7 +162,9 @@ export default function App() {
                 )
               })()
             ))}
-          </nav>
+            </nav>
+          </div>
+          <PlayerProfileCard leaderboardEntries={lb.data?.entries} roomUsers={roomUsers} />
           <div className="sidebar-status">
             <Radio size={15} aria-hidden="true" />
             <div><strong>Live service</strong><span>실시간 데이터 연결됨</span></div>

@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { mockAllApis, dismissPatchNotes, goToMatchTab } from '../helpers/mock-api'
+import { mockAllApis, dismissPatchNotes, goToMatchTab, signInAs, skipPatchNotes } from '../helpers/mock-api'
 
 const FROZEN_TIME = new Date('2026-03-30T12:00:00Z').getTime()
 
@@ -35,6 +35,16 @@ test.describe('Visual regression', () => {
     await disableAnimations(page)
     await page.locator('.overview-panel').waitFor()
     await expect(page).toHaveScreenshot('overview.png', { maxDiffPixelRatio: 0.01 })
+  })
+
+  test('populated player profile card', async ({ page }) => {
+    await signInAs(page, 'KingOfIronFist')
+    await skipPatchNotes(page)
+    await page.goto('/')
+    await disableAnimations(page)
+    const card = page.getByRole('region', { name: '내 파이터 정보' })
+    await expect(card.locator('.sidebar-profile-character')).toHaveCount(2)
+    await expect(card).toHaveScreenshot('player-profile-card.png', { maxDiffPixelRatio: 0.01 })
   })
 
   test('rooms - rank match view', async ({ page }) => {

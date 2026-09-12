@@ -291,11 +291,6 @@
 .skip-link:focus { top: 8px; outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .app-header {
   position: sticky; top: 0; z-index: 40;
-  /* auto auto 1fr, not 1fr auto auto: Live reads as a sibling of the brand ---
-     it is site-wide state, not part of the profile --- so the slack belongs to
-     the profile column, which pins it to the right edge. Under 1fr auto auto
-     the brand absorbed the slack and left the 62px Live badge stranded in the
-     middle of the header, between two blocks several hundred px wide. */
   display: grid; grid-template-columns: auto auto minmax(0, 1fr); align-items: center; gap: 16px;
   /* The 48px portrait is the tallest thing in here and sets the floor: with the
      vertical padding at 6px the header cannot go below 60px, so 68px leaves 8px
@@ -369,12 +364,36 @@
    floor takes over, which is what keeps the nav labels from wrapping. */
 /* Shares --content-max with the header so the two edges line up. */
 .app-layout { display: grid; grid-template-columns: clamp(150px, 16vw, 190px) minmax(0, 1fr); gap: 16px; width: min(var(--content-max), calc(100% - 32px)); margin: 16px auto 0; }
-.app-sidebar { position: sticky; top: 86px; align-self: start; padding: 8px; border: 1px solid var(--color-border-light); border-radius: 8px; background: var(--color-bg-panel); }
+.app-sidebar { position: sticky; top: 86px; display: flex; align-self: start; flex-direction: column; gap: 12px; }
+.sidebar-nav-card, .sidebar-profile-card, .sidebar-status { border: 1px solid var(--color-border-light); border-radius: 8px; background: var(--color-bg-panel); }
+.sidebar-nav-card { padding: 8px; }
 .sidebar-heading { display: flex; align-items: center; justify-content: space-between; padding: 4px 6px 8px; color: var(--color-txt-faint); font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 .app-nav { display: flex; flex-direction: column; gap: 2px; }
 .app-nav .tab-btn { width: 100%; }
 .app-nav .tab-btn::before { display: none; }
-.sidebar-status { display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px 6px 2px; border-top: 1px solid var(--color-border); color: var(--color-accent); }
+.sidebar-profile-card { padding: 10px; }
+.sidebar-profile-heading { display: flex; min-height: 22px; align-items: center; justify-content: space-between; color: var(--color-txt-faint); font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.sidebar-profile-heading button { display: grid; width: 26px; height: 26px; place-items: center; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--color-txt-dim); cursor: pointer; }
+.sidebar-profile-heading button:hover { background: rgba(255,255,255,.04); color: var(--color-primary-text); }
+.sidebar-profile-identity { display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; padding: 6px 0 10px; }
+.sidebar-profile-name { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; padding: 0; border: 0; background: transparent; color: var(--color-txt); cursor: pointer; }
+.sidebar-profile-name:disabled { cursor: default; }
+.sidebar-profile-name strong { max-width: 108px; overflow: hidden; font-size: 14px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
+.sidebar-profile-name span { color: var(--color-primary-text); font-size: 11px; font-weight: 750; font-variant-numeric: tabular-nums; }
+.sidebar-profile-identity small { display: flex; flex: 0 0 auto; align-items: center; gap: 3px; color: var(--color-txt-faint); font-size: 9px; }
+.sidebar-profile-identity small.is-online { color: var(--color-accent); }
+.sidebar-profile-characters { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }
+.sidebar-profile-character { display: grid; min-width: 0; grid-template-columns: minmax(0, 1fr) 44px; align-items: center; gap: 8px; }
+.sidebar-profile-portrait { display: grid; width: 44px; height: 44px; overflow: hidden; place-items: center; border: 1px solid var(--color-border-light); border-radius: 6px; background: var(--color-bg-row); color: var(--color-txt-dim); }
+.sidebar-profile-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.sidebar-profile-rank { width: 100%; max-width: 52px; height: auto; justify-self: center; object-fit: contain; }
+.sidebar-profile-history { display: flex; width: 100%; min-height: 34px; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; border: 1px solid var(--color-border-light); border-radius: 6px; background: transparent; color: var(--color-txt-dim); font-size: 11px; font-weight: 700; cursor: pointer; }
+.sidebar-profile-history:hover:not(:disabled) { border-color: rgba(230,57,70,.4); background: rgba(230,57,70,.08); color: var(--color-txt); }
+.sidebar-profile-history:disabled { opacity: .45; cursor: default; }
+.sidebar-profile-empty { width: 100%; margin-top: 6px; }
+.sidebar-profile-editor { display: grid; grid-template-columns: minmax(0,1fr) 32px 32px; margin-top: 6px; }
+.sidebar-profile-editor input { width: 100%; min-width: 0; }
+.sidebar-status { display: flex; align-items: center; gap: 8px; padding: 10px 8px; color: var(--color-accent); }
 .sidebar-status div { display: flex; flex-direction: column; }
 .sidebar-status strong { color: var(--color-txt); font-size: 10px; }
 .sidebar-status span { color: var(--color-txt-dim); font-size: 11px; }
@@ -883,8 +902,21 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
   .app-main { padding: 12px 8px 0; }
   /* The 8px gap alone puts the bar inside the iPhone home indicator's 34px
      strip, where the system swallows taps. env() resolves to 0 elsewhere. */
-  .app-sidebar { position: fixed; inset: auto 8px calc(8px + env(safe-area-inset-bottom)); z-index: 50; padding: 4px; border-color: rgba(255,255,255,.13); background: rgba(21,21,23,.97); backdrop-filter: blur(14px); }
+  .app-sidebar { position: fixed; inset: auto 8px calc(8px + env(safe-area-inset-bottom)); z-index: 50; display: block; padding: 4px; border: 1px solid rgba(255,255,255,.13); border-radius: 8px; background: rgba(21,21,23,.97); backdrop-filter: blur(14px); }
+  .sidebar-nav-card { padding: 0; border: 0; background: transparent; }
   .sidebar-heading, .sidebar-status { display: none; }
+  .mobile-profile-slot { min-width: 0; justify-self: end; }
+  .sidebar-profile-card.is-mobile-profile { width: auto; padding: 0; border: 0; background: transparent; }
+  .is-mobile-profile .sidebar-profile-heading, .is-mobile-profile .sidebar-profile-characters, .is-mobile-profile .sidebar-profile-history { display: none; }
+  .is-mobile-profile .sidebar-profile-identity { align-items: center; gap: 6px; padding: 0; }
+  .is-mobile-profile .sidebar-profile-name { min-height: 34px; justify-content: center; padding: 0 8px; border: 1px solid var(--color-border-light); border-radius: 6px; background: var(--color-bg-panel); }
+  .is-mobile-profile .sidebar-profile-name strong { max-width: 100px; font-size: 12px; }
+  .is-mobile-profile .sidebar-profile-name span { display: none; }
+  .is-mobile-profile .sidebar-profile-identity small { display: none; }
+  .is-mobile-profile .sidebar-profile-empty { width: auto; margin: 0; }
+  .is-mobile-profile .sidebar-profile-editor { width: min(174px, calc(100vw - 188px)); grid-template-columns: minmax(70px,1fr) 30px 30px; margin: 0; }
+  .is-mobile-profile .sidebar-profile-editor input { min-height: 34px; padding-inline: 6px; }
+  .is-mobile-profile .sidebar-profile-editor button { width: 30px; }
   /* One column per primary tab: a wrapped second row would sit over content. */
   .app-nav { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; overflow: visible; }
   .app-nav::-webkit-scrollbar { display: none; }

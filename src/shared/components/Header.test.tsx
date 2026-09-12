@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import Header from './Header'
+import PlayerProfileCard from './PlayerProfileCard'
 import { setIdentity } from '@/community/communityApi'
 import { AppError } from '@/shared/util/AppError'
 import { USERNAME_KEY } from '@/shared/util/cookie'
@@ -12,8 +12,8 @@ vi.mock('react-hot-toast', () => ({ default: { error: vi.fn() } }))
 const mockSetIdentity = vi.mocked(setIdentity)
 const mockToastError = vi.mocked(toast.error)
 
-function renderHeader() {
-  return render(<Header totalUsers={0} leaderboardEntries={[]} />, { wrapper: MemoryRouter })
+function renderProfile(leaderboardEntries: Parameters<typeof PlayerProfileCard>[0]['leaderboardEntries'] = []) {
+  return render(<PlayerProfileCard leaderboardEntries={leaderboardEntries} />, { wrapper: MemoryRouter })
 }
 
 async function submitName(name: string) {
@@ -22,7 +22,7 @@ async function submitName(name: string) {
   fireEvent.click(screen.getByRole('button', { name: '저장' }))
 }
 
-describe('Header username save', () => {
+describe('Player profile username save', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     // A successful save writes the name to localStorage, and the header reads
@@ -37,7 +37,7 @@ describe('Header username save', () => {
     // The editor used to close before the request resolved, so a dropped
     // connection discarded what the user had typed.
     mockSetIdentity.mockRejectedValue(new TypeError('Failed to fetch'))
-    renderHeader()
+    renderProfile()
 
     await submitName('TekkenGosu')
 
@@ -46,7 +46,7 @@ describe('Header username save', () => {
 
   it('answers a transport failure in Korean, not with the browser message', async () => {
     mockSetIdentity.mockRejectedValue(new TypeError('Failed to fetch'))
-    renderHeader()
+    renderProfile()
 
     await submitName('TekkenGosu')
 
@@ -63,7 +63,7 @@ describe('Header username save', () => {
     mockSetIdentity.mockRejectedValue(
       new AppError('유저명은 50자를 넘을 수 없습니다.', 422, true),
     )
-    renderHeader()
+    renderProfile()
 
     await submitName('A'.repeat(51))
 
@@ -74,7 +74,7 @@ describe('Header username save', () => {
 
   it('falls back to Korean when the API failed without explaining', async () => {
     mockSetIdentity.mockRejectedValue(new AppError('request failed: 500', 500, false))
-    renderHeader()
+    renderProfile()
 
     await submitName('TekkenGosu')
 
@@ -87,7 +87,7 @@ describe('Header username save', () => {
 
   it('closes the editor and keeps the name when the save succeeds', async () => {
     mockSetIdentity.mockResolvedValue(undefined as never)
-    renderHeader()
+    renderProfile()
 
     await submitName('TekkenGosu')
 
@@ -102,7 +102,7 @@ describe('Header username save', () => {
   // sentence the user can act on — and it goes away when the backend does not
   // put the raw name in a header.
   it('refuses a name the backend cannot carry, without asking it', async () => {
-    renderHeader()
+    renderProfile()
 
     await submitName('철권고수')
 
@@ -115,7 +115,7 @@ describe('Header username save', () => {
   })
 
   it('leaves the refused name in the editor to be corrected', async () => {
-    renderHeader()
+    renderProfile()
 
     await submitName('철권고수')
 
@@ -126,11 +126,33 @@ describe('Header username save', () => {
   // reads it back — so the guard must not widen into an ASCII-only rule.
   it('accepts an accented name, which the backend does carry', async () => {
     mockSetIdentity.mockResolvedValue(undefined as never)
-    renderHeader()
+    renderProfile()
 
     await submitName('café')
 
     await waitFor(() => expect(mockSetIdentity).toHaveBeenCalledWith('café'))
     expect(mockToastError).not.toHaveBeenCalled()
+  })
+
+  it('shows both character portraits and ranks without visible role or character-name text', () => {
+    document.cookie = `${USERNAME_KEY}=TestPlayer; path=/`
+    renderProfile([{
+      np_id: 'p1',
+      rank: 1,
+      online_name: 'TestPlayer',
+      player_info: {
+        main_char_info: { name: 'Jin', rank_info: { name: 'Destroyer', tier: 'Destroyer' } },
+        sub_char_info: { name: 'Heihachi', rank_info: { name: 'Vanquisher', tier: 'Vanquisher' } },
+      },
+    }])
+
+    expect(screen.getByAltText('Jin')).toBeInTheDocument()
+    expect(screen.getByAltText('Heihachi')).toBeInTheDocument()
+    expect(screen.getByAltText('Destroyer')).toBeInTheDocument()
+    expect(screen.getByAltText('Vanquisher')).toBeInTheDocument()
+    expect(screen.queryByText('MAIN')).not.toBeInTheDocument()
+    expect(screen.queryByText('SUB')).not.toBeInTheDocument()
+    expect(screen.queryByText('Jin')).not.toBeInTheDocument()
+    expect(screen.queryByText('Heihachi')).not.toBeInTheDocument()
   })
 })

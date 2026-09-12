@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { mockAllApis, dismissPatchNotes, goToMatchTab } from '../helpers/mock-api'
+import { mockAllApis, dismissPatchNotes, goToMatchTab, signInAs, skipPatchNotes } from '../helpers/mock-api'
 
 // Locators here go through roles and accessible names on purpose: the tab strip
 // is an ARIA tabs widget, so what a user — or a screen reader — can reach is the
@@ -106,5 +106,30 @@ test.describe('Navigation', () => {
 
     // Only one tab is ever selected, so the previous one has to give it up.
     await expect(page.getByRole('tab', { name: '개요' })).toHaveAttribute('aria-selected', 'false')
+  })
+
+  test('the populated player card keeps compact ranks left of both character portraits', async ({ page }) => {
+    await signInAs(page, 'KingOfIronFist')
+    await skipPatchNotes(page)
+    await page.reload()
+
+    const card = page.getByRole('region', { name: '내 파이터 정보' })
+    const rows = card.locator('.sidebar-profile-character')
+    await expect(rows).toHaveCount(2)
+
+    for (let index = 0; index < 2; index += 1) {
+      const rank = rows.nth(index).locator('.sidebar-profile-rank')
+      const portrait = rows.nth(index).locator('.sidebar-profile-portrait')
+      await expect(rank).toBeVisible()
+      await expect(portrait).toBeVisible()
+
+      const rankBox = await rank.boundingBox()
+      const portraitBox = await portrait.boundingBox()
+      expect(rankBox).not.toBeNull()
+      expect(portraitBox).not.toBeNull()
+      expect(rankBox!.x + rankBox!.width).toBeLessThan(portraitBox!.x)
+      expect(rankBox!.width).toBeLessThanOrEqual(52)
+      expect(rankBox!.height).toBeLessThan(portraitBox!.height)
+    }
   })
 })
