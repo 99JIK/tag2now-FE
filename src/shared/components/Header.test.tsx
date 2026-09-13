@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import PlayerProfileCard from './PlayerProfileCard'
@@ -31,6 +31,10 @@ describe('Player profile username save', () => {
     // "tag2now_username", which is not the key the app writes.
     localStorage.clear()
     document.cookie = `${USERNAME_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+  })
+
+  afterEach(() => {
+    document.getElementById('headerProfileSlot')?.remove()
   })
 
   it('keeps the typed name in an open editor when the save fails', async () => {
@@ -141,8 +145,8 @@ describe('Player profile username save', () => {
       rank: 1,
       online_name: 'TestPlayer',
       player_info: {
-        main_char_info: { name: 'Jin', rank_info: { name: 'Destroyer', tier: 'Destroyer' } },
-        sub_char_info: { name: 'Heihachi', rank_info: { name: 'Vanquisher', tier: 'Vanquisher' } },
+        main_char_info: { name: 'Jin', rank_info: { name: 'Destroyer', tier: 'Destroyer' }, wins: 250, losses: 80 },
+        sub_char_info: { name: 'Heihachi', rank_info: { name: 'Vanquisher', tier: 'Vanquisher' }, wins: 180, losses: 60 },
       },
     }])
 
@@ -150,9 +154,33 @@ describe('Player profile username save', () => {
     expect(screen.getByAltText('Heihachi')).toBeInTheDocument()
     expect(screen.getByAltText('Destroyer')).toBeInTheDocument()
     expect(screen.getByAltText('Vanquisher')).toBeInTheDocument()
+    expect(screen.getByText('Profile')).toBeInTheDocument()
+    expect(screen.queryByText('My fighter')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '내 정보 보기' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '내 전적 보기' })).not.toBeInTheDocument()
     expect(screen.queryByText('MAIN')).not.toBeInTheDocument()
     expect(screen.queryByText('SUB')).not.toBeInTheDocument()
     expect(screen.queryByText('Jin')).not.toBeInTheDocument()
     expect(screen.queryByText('Heihachi')).not.toBeInTheDocument()
+    expect(document.querySelectorAll('.char-cell--compact')).toHaveLength(2)
+    const records = document.querySelectorAll('.char-cell--compact .char-cell-record')
+    expect(records).toHaveLength(2)
+    expect(records[0]).toHaveTextContent('250W 80LWR:76%')
+    expect(records[1]).toHaveTextContent('180W 60LWR:75%')
+  })
+
+  it('shares the username editor with the header profile control', async () => {
+    document.cookie = `${USERNAME_KEY}=TestPlayer; path=/`
+    const headerTarget = document.createElement('div')
+    headerTarget.id = 'headerProfileSlot'
+    document.body.append(headerTarget)
+    renderProfile()
+
+    const header = within(headerTarget)
+    await waitFor(() => expect(header.getByText('TestPlayer')).toBeInTheDocument())
+    fireEvent.click(header.getByRole('button', { name: 'TestPlayer 헤더에서 유저명 수정' }))
+
+    expect(header.getByLabelText('유저명 입력')).toHaveValue('TestPlayer')
+    expect(screen.getAllByLabelText('유저명 입력')).toHaveLength(1)
   })
 })

@@ -43,8 +43,9 @@ test.describe('Visual regression', () => {
     await page.goto('/')
     await disableAnimations(page)
     const card = page.getByRole('region', { name: '내 파이터 정보' })
-    await expect(card.locator('.sidebar-profile-character')).toHaveCount(2)
+    await expect(card.locator('.char-cell--compact')).toHaveCount(2)
     await expect(card).toHaveScreenshot('player-profile-card.png', { maxDiffPixelRatio: 0.01 })
+    await expect(page.locator('#headerProfileSlot')).toHaveScreenshot('header-profile-control.png', { maxDiffPixelRatio: 0.01 })
   })
 
   test('rooms - rank match view', async ({ page }) => {

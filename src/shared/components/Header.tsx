@@ -21,7 +21,7 @@ export default function Header({ totalUsers }: HeaderProps) {
         <span>Live</span>
         {totalUsers != null && totalUsers > 0 && <strong>{totalUsers}</strong>}
       </div>
-      <div id="mobileProfileSlot" className="mobile-profile-slot" />
+      <div id="headerProfileSlot" className="profile-control" />
     </header>
   )
 }

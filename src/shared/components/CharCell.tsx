@@ -7,20 +7,21 @@ export interface CharCellProps {
   rankInfo?: CharRankInfo
   wins?: number
   losses?: number
+  compact?: boolean
 }
 
-export default function CharCell({ name, rankInfo, wins, losses }: CharCellProps) {
+export default function CharCell({ name, rankInfo, wins, losses, compact = false }: CharCellProps) {
   if (!name) return <div className="char-td" aria-label="캐릭터 없음">—</div>
   const url = charImageUrl(name)
   const total = (wins ?? 0) + (losses ?? 0)
   const winRate = total > 0 ? Math.round((wins ?? 0) / total * 100) : null
   return (
-    <div className="flex flex-col sm:flex-row items-center sm:justify-center gap-1 sm:gap-2 sm:w-auto mx-auto">
-      <div className="flex justify-center flex-col sm:flex-row items-center gap-1">
-        <RankImage rankInfo={rankInfo} className="char-rank h-8 w-auto" />
-        {url && <img src={url} alt={name} className="w-13 h-13 sm:w-15 sm:h-15 object-contain" />}
+    <div className={`char-cell flex flex-col sm:flex-row items-center sm:justify-center gap-1 sm:gap-2 sm:w-auto mx-auto${compact ? ' char-cell--compact' : ''}`}>
+      <div className="char-cell-content flex justify-center flex-col sm:flex-row items-center gap-1">
+        <RankImage rankInfo={rankInfo} className="char-cell-rank char-rank h-8 w-auto" />
+        {url && <img src={url} alt={name} className="char-cell-portrait w-13 h-13 sm:w-15 sm:h-15 object-contain" />}
         {winRate != null && (
-          <div className="hidden w-3/10 sm:block text-sm leading-tight whitespace-nowrap text-left tabular-nums">
+          <div className="char-cell-record hidden w-3/10 sm:block text-sm leading-tight whitespace-nowrap text-left tabular-nums">
             <span className="text-accent">{wins}<span className="text-txt-faint">W</span></span> <span className="text-tier-red">{losses}<span className="text-txt-faint">L</span></span>
             <br />
             <span className="text-txt-dim">WR:</span>{winRate}%

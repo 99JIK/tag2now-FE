@@ -108,28 +108,77 @@ test.describe('Navigation', () => {
     await expect(page.getByRole('tab', { name: '개요' })).toHaveAttribute('aria-selected', 'false')
   })
 
-  test('the populated player card keeps compact ranks left of both character portraits', async ({ page }) => {
+  test('the header exposes the username and its editor', async ({ page }) => {
+    await signInAs(page, 'KingOfIronFist')
+    await skipPatchNotes(page)
+    await page.reload()
+
+    const headerProfile = page.locator('#headerProfileSlot')
+    await expect(headerProfile.getByText('KingOfIronFist')).toBeVisible()
+    await headerProfile.getByRole('button', { name: 'KingOfIronFist 헤더에서 유저명 수정' }).click()
+    await expect(headerProfile.getByLabel('유저명 입력')).toHaveValue('KingOfIronFist')
+    await headerProfile.getByRole('button', { name: '취소' }).click()
+  })
+
+  test('the populated player card reuses the compact leaderboard character layout', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'The detailed profile card belongs to the desktop sidebar.')
     await signInAs(page, 'KingOfIronFist')
     await skipPatchNotes(page)
     await page.reload()
 
     const card = page.getByRole('region', { name: '내 파이터 정보' })
-    const rows = card.locator('.sidebar-profile-character')
+    const rows = card.locator('.char-cell--compact')
+    const cardBox = await card.boundingBox()
+    expect(cardBox).not.toBeNull()
+    const identityItems = [
+      card.locator('.sidebar-profile-rank-position'),
+      card.locator('.sidebar-profile-name strong'),
+    ]
+    const identityBoxes = await Promise.all(identityItems.map(item => item.boundingBox()))
+    identityBoxes.forEach(box => expect(box).not.toBeNull())
+    expect(await identityItems[1].evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true)
+    for (let index = 1; index < identityBoxes.length; index += 1) {
+      expect(identityBoxes[index - 1]!.x + identityBoxes[index - 1]!.width).toBeLessThan(identityBoxes[index]!.x)
+      const previousCenterY = identityBoxes[index - 1]!.y + identityBoxes[index - 1]!.height / 2
+      const currentCenterY = identityBoxes[index]!.y + identityBoxes[index]!.height / 2
+      expect(Math.abs(previousCenterY - currentCenterY)).toBeLessThanOrEqual(2)
+    }
+    const headingItems = [
+      card.locator('.sidebar-profile-heading > span'),
+      card.locator('.sidebar-profile-presence'),
+      card.locator('.sidebar-profile-edit'),
+    ]
+    await Promise.all(headingItems.map(item => expect(item).toBeVisible()))
+    const headingBoxes = await Promise.all(headingItems.map(item => item.boundingBox()))
+    headingBoxes.forEach(box => expect(box).not.toBeNull())
+    expect(headingBoxes[0]!.x + headingBoxes[0]!.width).toBeLessThan(headingBoxes[1]!.x)
+    expect(headingBoxes[1]!.x + headingBoxes[1]!.width).toBeLessThan(headingBoxes[2]!.x)
     await expect(rows).toHaveCount(2)
+    await expect(card.locator('.char-cell-record')).toHaveText([/250W 80LWR:76%/, /180W 60LWR:75%/])
 
     for (let index = 0; index < 2; index += 1) {
-      const rank = rows.nth(index).locator('.sidebar-profile-rank')
-      const portrait = rows.nth(index).locator('.sidebar-profile-portrait')
+      const rank = rows.nth(index).locator('.char-cell-rank')
+      const record = rows.nth(index).locator('.char-cell-record')
+      const portrait = rows.nth(index).locator('.char-cell-portrait')
       await expect(rank).toBeVisible()
+      await expect(record).toBeVisible()
       await expect(portrait).toBeVisible()
 
       const rankBox = await rank.boundingBox()
+      const recordBox = await record.boundingBox()
       const portraitBox = await portrait.boundingBox()
       expect(rankBox).not.toBeNull()
+      expect(recordBox).not.toBeNull()
       expect(portraitBox).not.toBeNull()
       expect(rankBox!.x + rankBox!.width).toBeLessThan(portraitBox!.x)
-      expect(rankBox!.width).toBeLessThanOrEqual(52)
+      expect(portraitBox!.x + portraitBox!.width).toBeLessThan(recordBox!.x)
+      const leftSpace = rankBox!.x - cardBox!.x
+      const rightSpace = cardBox!.x + cardBox!.width - (recordBox!.x + recordBox!.width)
+      expect(Math.abs(leftSpace - rightSpace)).toBeLessThanOrEqual(8)
+      expect(rankBox!.width).toBeLessThanOrEqual(56)
       expect(rankBox!.height).toBeLessThan(portraitBox!.height)
+      expect(portraitBox!.width).toBe(52)
+      expect(portraitBox!.height).toBe(52)
     }
   })
 })
