@@ -551,14 +551,16 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
 .overview-link { flex: 0 0 auto; }
 
 .overview-rank-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
-.overview-rank-head, .overview-rank-row { display: grid; align-items: center; gap: 8px; grid-template-columns: 20px minmax(0,1fr) 48px 130px 130px; }
+.overview-rank-head, .overview-rank-row { display: grid; align-items: center; gap: 4px; grid-template-columns: 20px minmax(0,1fr) 40px 94.72px 94.72px; }
 /* The leaderboard list ranks by row position, so it renders no detail cell
    and drops that track — the name column takes the freed width. */
 .overview-rank-list.has-no-detail .overview-rank-head,
-.overview-rank-list.has-no-detail .overview-rank-row { grid-template-columns: 20px minmax(0,1fr) 130px 130px; }
+.overview-rank-list.has-no-detail .overview-rank-row { grid-template-columns: 20px minmax(0,1fr) 94.72px 94.72px; }
 .overview-rank-head { padding: 0 8px 4px; color: var(--color-txt-faint); font-size: 9px; font-weight: 650; letter-spacing: .08em; text-transform: uppercase; }
 .overview-rank-head > :nth-child(4), .overview-rank-head > :nth-child(5) { text-align: center; }
 .overview-rank-head > :nth-child(3), .overview-rank-detail { text-align: right; }
+.overview-rank-list:not(.has-no-detail) .overview-rank-head > :nth-child(3),
+.overview-rank-detail { padding-right: 6px; }
 /* Without the detail cell Main and Sub shift left by one child. */
 .overview-rank-list.has-no-detail .overview-rank-head > :nth-child(3),
 .overview-rank-list.has-no-detail .overview-rank-head > :nth-child(4) { text-align: center; }
@@ -598,9 +600,10 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
   92%, 100% { transform: translateX(115%); }
 }
 .mini-char.is-empty { color: var(--color-txt-faint); font-size: 11px; }
-/* 76 + 4 gap + 50 = the 130px column; sized so the rank rows fit a 1050px layout. */
-.mini-char-rank { width: auto; min-width: 0; max-width: 76px; height: auto; object-fit: contain; }
-.mini-char-portrait { width: 50px; height: 50px; flex: 0 0 auto; object-fit: contain; }
+/* At 72% of the original art size, 54.72 + 4 gap + 36 = 94.72px. The reclaimed
+   width leaves room for up to nine player-name characters beside match count. */
+.mini-char-rank { width: auto; min-width: 0; max-width: 54.72px; height: auto; object-fit: contain; }
+.mini-char-portrait { width: 36px; height: 36px; flex: 0 0 auto; object-fit: contain; }
 .mini-char-name { max-width: 100%; overflow: hidden; color: var(--color-txt-dim); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .overview-rank-pos { color: var(--color-txt-dim); font-family: var(--font-display); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .overview-rank-name { min-width: 0; overflow: hidden; color: var(--color-txt); font-size: 14px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
@@ -866,8 +869,8 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
   .overview-rank-row .mini-char:nth-of-type(1) { grid-area: main; }
   .overview-rank-row .mini-char:nth-of-type(2) { grid-area: sub; }
   .overview-rank-row .mini-char { width: 100%; justify-content: flex-start; }
-  .mini-char-rank { max-width: 72px; }
-  .mini-char-portrait { width: 44px; height: 44px; }
+  .mini-char-rank { max-width: 51.84px; }
+  .mini-char-portrait { width: 31.68px; height: 31.68px; }
   .kpi-card-value { font-size: 22px; text-align: center; }
   .app-shell { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
   /* 1fr for the brand, auto for the profile --- not the reverse. Under

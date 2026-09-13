@@ -38,6 +38,7 @@ export default function TopFiveList({ rows, detailLabel, emptyMsg = '데이터 �
       </li>
       {rows.map((row, i) => {
         const medal = i < 3 ? MEDAL[i] : null
+        const displayName = row.name.slice(0, 9)
         return (
           <li
             key={row.key}
@@ -53,8 +54,8 @@ export default function TopFiveList({ rows, detailLabel, emptyMsg = '데이터 �
                   player the name does. The label is a span of its own because
                   the ellipsis needs `overflow: hidden`, and that would clip
                   the very overlay that does the stretching. */}
-              <button type="button" className="player-btn overview-rank-btn" onClick={() => onSelect(row.npid)}>
-                <span className="overview-rank-btn-label">{row.name}</span>
+              <button type="button" className="player-btn overview-rank-btn" onClick={() => onSelect(row.npid)} aria-label={row.name} title={row.name}>
+                <span className="overview-rank-btn-label">{displayName}</span>
               </button>
             </span>
             {row.detail && <span className="overview-rank-detail">{row.detail}</span>}

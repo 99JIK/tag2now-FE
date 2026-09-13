@@ -35,6 +35,7 @@ test.describe('Visual regression', () => {
     await disableAnimations(page)
     await page.locator('.overview-panel').waitFor()
     await expect(page).toHaveScreenshot('overview.png', { maxDiffPixelRatio: 0.01 })
+    await expect(page.getByRole('region', { name: '주간 철악귀' })).toHaveScreenshot('weekly-top.png', { maxDiffPixelRatio: 0.01 })
   })
 
   test('populated player profile card', async ({ page }) => {

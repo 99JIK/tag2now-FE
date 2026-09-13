@@ -40,8 +40,44 @@ test.describe('Overview', () => {
     await expect(top.locator('img[alt="Alisa"]')).toBeVisible()
 
     // A weekly player absent from the leaderboard keeps its columns as dashes.
-    const unranked = weekly.locator('.overview-rank-row', { hasText: 'UnrankedPlayer' })
+    const unranked = weekly.locator('.overview-rank-row').filter({
+      has: page.locator('button[aria-label="UnrankedPlayer"]'),
+    })
     await expect(unranked.locator('.mini-char.is-empty')).toHaveCount(2)
+  })
+
+  test('keeps weekly player names clear of match counts with compact character art', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'The mobile overview places the name and match count on their own row.')
+    const top = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-row').first()
+    const nameBox = await top.locator('.overview-rank-name').boundingBox()
+    const nameLabels = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-btn-label')
+    const detailBox = await top.locator('.overview-rank-detail').boundingBox()
+    const detailTextBox = await top.locator('.overview-rank-detail').evaluate(element => {
+      const range = document.createRange()
+      range.selectNodeContents(element)
+      const rect = range.getBoundingClientRect()
+      return { x: rect.x, width: rect.width }
+    })
+    const rankBox = await top.locator('.mini-char-rank').first().boundingBox()
+    const portraitBox = await top.locator('.mini-char-portrait').first().boundingBox()
+
+    expect(nameBox).not.toBeNull()
+    expect(detailBox).not.toBeNull()
+    expect(rankBox).not.toBeNull()
+    expect(portraitBox).not.toBeNull()
+    expect(nameBox!.x + nameBox!.width).toBeLessThanOrEqual(detailBox!.x)
+    expect(rankBox!.x - (detailTextBox.x + detailTextBox.width)).toBeGreaterThanOrEqual(10)
+    const invalidNames = await nameLabels.evaluateAll(elements => elements.flatMap(element => {
+      const name = element.textContent ?? ''
+      return name.length <= 9 && element.scrollWidth <= element.clientWidth
+        ? []
+        : [{ name, available: element.clientWidth, required: element.scrollWidth }]
+    }))
+    expect(invalidNames).toEqual([])
+    await expect(nameLabels.first()).toHaveText('TagComboK')
+    expect(rankBox!.width).toBeLessThanOrEqual(54.72)
+    expect(portraitBox!.width).toBeCloseTo(36, 1)
+    expect(portraitBox!.height).toBeCloseTo(36, 1)
   })
 
   test('omits a reservation nobody can still join', async ({ page }) => {
