@@ -134,12 +134,12 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
       <section className="chart-panel overview-chart" aria-labelledby="overview-daily-heading">
         {/* A sibling of the four card sections, so it takes their level. */}
         <h3 id="overview-daily-heading">최근 7일 접속자 추이</h3>
-        <DailyChart data={data?.daily ?? []} height={160} axisGutter={0} />
+        <DailyChart data={data?.daily ?? []} height={150} axisGutter={0} />
       </section>
 
       {/* Kept below the chart: a ranking is slow-moving reference data with a
           tab of its own one click away, and these two lists are twice the
-          height of the cards above (5 x 66px rows). */}
+          height of the cards above (5 x 52px rows). */}
       <div className="overview-grid">
         <OverviewSection icon={Trophy} title="리더보드 TOP 5" subtitle="현재 상위 랭커" linkLabel="리더보드" to={pathOf('leaderboard')}>
           {/* Names what is missing rather than "데이터". The list is empty both

@@ -12,8 +12,11 @@ export default function DailyChart({ data, height = 176, axisGutter = -20 }: { d
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={formatted} margin={{ top: 16, right: 8, left: axisGutter, bottom: 0 }}>
         <CartesianGrid vertical={false} stroke={COLOR_BORDER} strokeOpacity={0.8} />
+        {/* 20, not Recharts' default 30: the 11px dates need no more, and the
+            slack sat between the plot and the legend as dead footer. */}
         <XAxis
           dataKey="label"
+          height={20}
           tickLine={false}
           axisLine={false}
           tick={{ fill: COLOR_TXT_DIM, fontSize: 11 }}
