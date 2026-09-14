@@ -183,4 +183,21 @@ describe('Player profile username save', () => {
     expect(header.getByLabelText('유저명 입력')).toHaveValue('TestPlayer')
     expect(screen.getAllByLabelText('유저명 입력')).toHaveLength(1)
   })
+
+  // Phones hide the sidebar card and its 내 정보 보기, so the header carries a
+  // way in of its own (CSS shows it only there). It follows the sidebar's rule:
+  // there is a record to open only for a name the leaderboard knows.
+  it('offers 내 정보 in the header, open only for a ranked name', async () => {
+    document.cookie = `${USERNAME_KEY}=TestPlayer; path=/`
+    const headerTarget = document.createElement('div')
+    headerTarget.id = 'headerProfileSlot'
+    document.body.append(headerTarget)
+    const { rerender } = renderProfile()
+
+    const header = within(headerTarget)
+    await waitFor(() => expect(header.getByRole('button', { name: '내 정보' })).toBeDisabled())
+
+    rerender(<PlayerProfileCard leaderboardEntries={[{ np_id: 'p1', rank: 1, online_name: 'TestPlayer', player_info: null }]} />)
+    expect(header.getByRole('button', { name: '내 정보' })).toBeEnabled()
+  })
 })

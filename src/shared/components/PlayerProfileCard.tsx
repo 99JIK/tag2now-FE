@@ -107,6 +107,18 @@ export default function PlayerProfileCard({ leaderboardEntries, roomUsers = [] }
 
   const headerControl = editingSurface === 'header' ? editor() : username ? (
     <div className="profile-copy">
+      {/* Shown only below 760px, where the sidebar card is hidden. The label
+          is its own span because the narrowest screens drop it for the icon;
+          aria-label keeps the button named when they do. */}
+      <button
+        type="button"
+        className="profile-history"
+        onClick={() => setProfileOpen(true)}
+        disabled={!entry}
+        aria-label="내 정보"
+      >
+        <Trophy size={14} aria-hidden="true" /> <span className="profile-history-label">내 정보</span>
+      </button>
       <button
         type="button"
         className="profile-name"

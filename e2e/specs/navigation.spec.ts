@@ -120,6 +120,30 @@ test.describe('Navigation', () => {
     await headerProfile.getByRole('button', { name: '취소' }).click()
   })
 
+  // Below 760px the sidebar card, and its 내 정보 보기, is hidden; the header
+  // carries the way into your own record instead.
+  test('the mobile header opens your own record', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'Desktop reaches the record from the sidebar card.')
+    await signInAs(page, 'KingOfIronFist')
+    await skipPatchNotes(page)
+    await page.reload()
+
+    await page.locator('#headerProfileSlot').getByRole('button', { name: '내 정보' }).click()
+
+    await expect(page.getByRole('button', { name: '플레이어 기록 닫기' })).toBeVisible()
+  })
+
+  test('the desktop header leaves 내 정보 to the sidebar card', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'Phones have no sidebar card, so the header carries it.')
+    await signInAs(page, 'KingOfIronFist')
+    await skipPatchNotes(page)
+    await page.reload()
+
+    // exact: the name button's label ends in "내 정보 보기" too.
+    await expect(page.getByRole('region', { name: '내 파이터 정보' }).getByRole('button', { name: '내 정보 보기', exact: true })).toBeVisible()
+    await expect(page.locator('#headerProfileSlot').getByRole('button', { name: '내 정보', exact: true })).toBeHidden()
+  })
+
   test('the populated player card reuses the compact leaderboard character layout', async ({ page, isMobile }) => {
     test.skip(isMobile, 'The detailed profile card belongs to the desktop sidebar.')
     await signInAs(page, 'KingOfIronFist')

@@ -14,6 +14,9 @@
   --color-secondary: #ff9aa0;
   --color-secondary-light: #ffd2d5;
   --color-accent: #34d399;
+  /* The podium's first place, as MEDAL[0] in shared/medalColors.ts, which
+     inline styles read. Keep the two in step. */
+  --color-gold: #e4bd67;
   --color-error: #f97316;
   --color-silver: #c0c0c0;
   --color-bronze: #cd7f32;
@@ -333,6 +336,9 @@
 .profile-edit { display: inline-grid; place-items: center; width: 30px; min-height: 30px; flex: 0 0 auto; padding: 0; border: 1px solid rgba(230,57,70,.42); border-radius: 6px; background: rgba(230,57,70,.14); color: var(--color-primary-text); cursor: pointer; transition: background .15s, border-color .15s; }
 .profile-edit:hover { border-color: var(--color-primary); background: rgba(230,57,70,.28); }
 .profile-edit:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+/* Mobile's way into your record: below 760px the sidebar card, and its
+   내 정보 보기, is hidden. On desktop that button already does the job. */
+.profile-history { display: none; min-height: 30px; flex: 0 0 auto; align-items: center; gap: 4px; padding: 0 8px; font-size: 12px; font-weight: 700; white-space: nowrap; }
 /* Main and sub character each carry their own rank badge and W/L, so they are
    rendered as two self-contained cells rather than one avatar plus a detached
    row of rank art — the old layout gave no clue which rank belonged to which. */
@@ -389,9 +395,13 @@
 .char-cell--compact .char-cell-rank { width: auto; max-width: 56px; height: auto; max-height: 29px; flex: 0 1 56px; object-fit: contain; }
 .char-cell--compact .char-cell-portrait { width: 52px; height: 52px; flex: 0 0 52px; object-fit: contain; }
 .char-cell--compact .char-cell-record { display: block; width: auto; min-width: 0; font-size: 9px; line-height: 1.15; }
-.sidebar-profile-history { display: flex; width: 100%; min-height: 34px; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; border: 1px solid var(--color-border-light); border-radius: 6px; background: transparent; color: var(--color-txt-dim); font-size: 11px; font-weight: 700; cursor: pointer; }
-.sidebar-profile-history:hover:not(:disabled) { border-color: rgba(230,57,70,.4); background: rgba(230,57,70,.08); color: var(--color-txt); }
-.sidebar-profile-history:disabled { opacity: .45; cursor: default; }
+.sidebar-profile-history { display: flex; width: 100%; min-height: 34px; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; font-size: 11px; font-weight: 700; }
+/* Gold, the podium's first-place colour, for the two ways into your own
+   record. Every other accent on the page is red, so a red tint here read as
+   one more red thing and was passed over; a grey outline read as nothing. */
+.sidebar-profile-history, .profile-history { border: 1px solid rgba(228,189,103,.38); border-radius: 6px; background: rgba(228,189,103,.08); color: var(--color-gold); cursor: pointer; transition: background .15s, border-color .15s; }
+.sidebar-profile-history:hover:not(:disabled), .profile-history:hover:not(:disabled) { border-color: rgba(228,189,103,.6); background: rgba(228,189,103,.16); }
+.sidebar-profile-history:disabled, .profile-history:disabled { opacity: .45; cursor: default; }
 .sidebar-profile-empty { width: 100%; margin-top: 6px; }
 .sidebar-profile-editor { display: grid; grid-template-columns: minmax(0,1fr) 32px 32px; margin-top: 6px; }
 .sidebar-profile-editor input { width: 100%; min-width: 0; }
@@ -882,32 +892,34 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
   .mini-char-portrait { width: 31.68px; height: 31.68px; }
   .kpi-card-value { font-size: 22px; text-align: center; }
   .app-shell { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
-  /* 1fr for the brand, auto for the profile --- not the reverse. Under
-     `minmax(0,auto)` the brand column's max is its content width, so it never
-     yielded and the profile chip painted over the wordmark: 44.5px of overlap
-     at 320px, and 29.2px at 375px once a username reached the 140px cap. The
-     profile is the fixed-size side (portraits and a capped name), so it takes
-     `auto` and the brand absorbs what is left. */
-  .app-header { grid-template-columns: minmax(0, 1fr) minmax(0, auto); gap: 8px; min-height: 68px; padding: 8px 12px; }
-  /* The wordmark is the one thing here that can lose characters silently, so
-     it clips rather than overflowing its column. min-width:0 is needed on the
-     lockup *and* on its inner text wrapper: a flex item defaults to
-     min-width:auto, which is its content width, so without both the column
-     refuses to shrink and the overlap survives the 1fr. */
-  .brand-lockup, .brand-lockup > div { min-width: 0; }
-  .brand-lockup h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* auto for the brand, 1fr for the profile: the wordmark keeps its width and
+     the username gives way. Both other arrangements failed. When neither side
+     could shrink (`minmax(0,auto)` brand, `auto` profile) the chip painted over
+     the wordmark, 44.5px at 320px. Letting the brand shrink instead cut
+     "TAG2NOW" to "TAG2…" once 내 정보 joined the row. The name already
+     ellipsises, so shrinking there reads as intended; every box from the
+     column down to it carries min-width: 0 so the column can actually get
+     narrower than its content, which is what the overlap lacked. */
+  .app-header { grid-template-columns: auto minmax(0, 1fr); gap: 8px; min-height: 68px; padding: 8px 12px; }
   /* Both portraits stay on mobile; the rank banners and W/L do not. Two ranks
      cost ~68px even shrunk, which at 375px came straight out of the username
      and left it clipped to a few characters. Dropping them buys back enough
      for full-size portraits and a readable name. */
-  .profile-control { justify-self: end; min-width: 0; }
+  /* max-width, not just min-width: an end-aligned grid item is sized to its
+     content, so without a cap it grew past the 1fr and back over the
+     wordmark (18px at 375px with a 16-character name) instead of making
+     the name inside it give way. */
+  .profile-control { justify-self: end; min-width: 0; max-width: 100%; }
   .profile-summary { min-width: 0; gap: 6px; }
   .profile-chars { min-width: 0; gap: 6px; padding-left: 6px; }
   .profile-char { gap: 3px; min-width: 0; }
   .profile-copy { min-width: 0; }
   .profile-record, .profile-char-rank { display: none; }
   .profile-avatar { width: 34px; height: 34px; flex: 0 0 auto; }
-  .profile-name { max-width: 140px; padding: 0 6px; }
+  /* min-width: 0 lets a long name give way to its ellipsis rather than push
+     the header past the screen now that 내 정보 shares the row. */
+  .profile-name { max-width: 140px; min-width: 0; padding: 0 6px; }
+  .profile-history { display: inline-flex; }
   .brand-lockup p, .profile-copy small { display: none; }
   .brand-mark { width: 32px; height: 32px; }
   .brand-lockup h1 { font-size: 14px; }
@@ -1011,6 +1023,13 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
   .activity-insight { grid-template-columns: 1fr; gap: 2px; }
   .activity-ring-wrap { width: 166px; }
   .activity-summary { padding: 12px 4px 2px; border-top: 1px solid var(--color-border); border-left: 0; }
+}
+
+@media (max-width: 360px) {
+  /* The trophy alone. With its label, 내 정보 left the name ~20px at 320px
+     beside a full-width wordmark; the button's aria-label still names it. */
+  .profile-history { width: 30px; justify-content: center; padding: 0; }
+  .profile-history-label { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
