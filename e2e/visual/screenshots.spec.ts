@@ -38,7 +38,8 @@ test.describe('Visual regression', () => {
     await expect(page.getByRole('region', { name: '주간 철악귀' })).toHaveScreenshot('weekly-top.png', { maxDiffPixelRatio: 0.01 })
   })
 
-  test('populated player profile card', async ({ page }) => {
+  test('populated player profile card', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'The detailed profile card belongs to the desktop sidebar.')
     await signInAs(page, 'KingOfIronFist')
     await skipPatchNotes(page)
     await page.goto('/')

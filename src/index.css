@@ -716,6 +716,7 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
 .reservation-card:hover { border-color: rgba(230,57,70,.35); background: rgba(230,57,70,.06); }
 .reservation-card.selected { border-color: rgba(230,57,70,.55); background: rgba(230,57,70,.12); box-shadow: inset 3px 0 0 var(--color-primary); }
 .reservation-detail { position: sticky; top: 86px; align-self: start; padding: 16px; border: 1px solid rgba(230,57,70,.35); border-radius: 6px; background: var(--color-bg-row); }
+.reservation-detail-back { display: none; }
 .reservation-detail.is-full { border-color: rgba(255,154,160,.35); }
 .modal-backdrop { position: fixed; inset: 0; z-index: 60; display: flex; overflow-y: auto; padding: 16px; background: rgba(6,6,8,.82); }
 .reservation-modal { position: relative; width: min(720px, 100%); margin: auto; gap: 12px; overflow: visible; padding: 16px; border: 1px solid rgba(255,255,255,.12); border-radius: 8px; background: #121214; box-shadow: 0 24px 70px rgba(0,0,0,.42); }
@@ -969,6 +970,11 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
   .data-table-wrap { border-radius: 6px; }
   .comment-composer { position: sticky; bottom: 72px; z-index: 10; background: var(--color-bg-panel); }
   .reservation-detail { position: static; }
+  /* List and detail take turns on phones; the path picks which (Reservation.tsx). */
+  .panel:not(.has-selection) .reservation-detail { display: none; }
+  .panel.has-selection .reservation-list,
+  .panel.has-selection .reservation-filter-bar { display: none; }
+  .reservation-detail-back { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 12px; }
   .btn-primary, .btn-ghost, .btn-danger, .refresh-btn { min-height: 44px; }
   .refresh-btn { width: 44px; height: 44px; }
   .segmented-control button { min-height: 42px; }
@@ -988,6 +994,9 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
   .match-table col:nth-child(3) { width: 36px; }
   .match-table .player-name { max-width: none; padding-inline: 4px; font-size: 13px; }
   .match-table .player-btn { display: block; width: 100%; overflow: hidden; padding-inline: 4px; text-overflow: ellipsis; white-space: nowrap; }
+  /* The block, full-width button above fits the in-game cells; in a waiting
+     row it sat each name on a line of its own under the rank image. */
+  .match-table .searching-players .player-btn { display: inline-block; width: auto; min-width: 0; max-width: 100%; }
   .match-table .vs-label { font-size: 12px; }
   .ranking-table .player-btn { width: 100%; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { width: 11%; }
@@ -1000,8 +1009,13 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
   .weekly-ranking-table th:nth-child(4), .weekly-ranking-table td:nth-child(4), .weekly-ranking-table th:nth-child(6), .weekly-ranking-table td:nth-child(6) { display: none; }
   .ranking-table .char-td { min-width: 0; max-width: none; overflow: hidden; }
   .ranking-table .char-td img { max-width: 100%; object-fit: contain; }
-  .history-backdrop { align-items: flex-start; padding: 8px; }
-  .history-dialog { margin-block: auto; }
+  /* A margin of page stays visible around the dialog, so it reads as a popup
+     rather than a screen of its own. */
+  .history-backdrop { align-items: center; padding: 24px 16px; }
+  /* Capped to the screen, with the header and period picker pinned and only
+     the body scrolling — the loaded record once ran past the screen and took
+     the whole backdrop with it. */
+  .history-dialog { display: flex; max-height: calc(100dvh - 48px); flex-direction: column; margin-block: auto; }
   .history-header { min-height: 72px; padding: 12px; }
   .history-title-group div > p:last-child { display: none; }
   .history-toolbar { align-items: stretch; flex-direction: column; padding: 8px 12px; }
@@ -1009,7 +1023,7 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
   .history-character-pair { margin-left: auto; }
   .history-period { width: 100%; }
   .history-period button { min-height: 38px; flex: 1; }
-  .history-body { padding: 12px; }
+  .history-body { min-height: 0; flex: 1 1 auto; overflow-y: auto; padding: 12px; }
   .history-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .history-content-grid { grid-template-columns: 1fr; }
   .history-section { min-height: 0; }

@@ -83,7 +83,7 @@ export default memo(function RankMatchTable({ rooms, leaderboardEntries }: RankM
                 {groupedSearching.map(([rankId, searching]) => (
                   <tr key={'s-' + rankId} className="tbl-row" style={rowAccentStyle}>
                     <td colSpan={4} className="px-3 py-1.5">
-                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <div className="searching-players flex flex-wrap items-center gap-x-3 gap-y-1">
                         <span className="searching-icon shrink-0 text-tier-yellow"><Search size={16} aria-hidden="true" /></span>
                         <RankImage rankInfo={searching[0].rank_info} className="h-7 w-auto shrink-0" />
                         {searching.map(({users: searchUsers}) => (

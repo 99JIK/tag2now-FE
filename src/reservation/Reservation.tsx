@@ -6,7 +6,7 @@ import RankImage from '@/shared/components/RankImage'
 import useModalDialog from '@/shared/hooks/useModalDialog'
 import { getUsername } from '@/shared/util/cookie'
 import { cancelParticipation, cancelReservation, createReservation, fetchReservations, hasParticipation, isOwner, joinReservation, updateReservation, type ApiReservation } from './reservationApi'
-import { CalendarPlus, Check, ChevronDown, Clock3, Filter, LogIn, Plus, UserMinus, X } from 'lucide-react'
+import { CalendarPlus, Check, ChevronDown, ChevronLeft, Clock3, Filter, LogIn, Plus, UserMinus, X } from 'lucide-react'
 import Select from '@/shared/components/Select'
 import ToggleGroup from '@/shared/components/ToggleGroup'
 import { reservationPath } from '@/config/routes'
@@ -159,6 +159,12 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
   const [form, setForm] = useState<FormState>(blankForm)
   const [editingId, setEditingId] = useState<number | null>(null)
 
+  // A card tapped far down the phone list would open its detail scrolled just
+  // as far; start it at the top. Desktop keeps its place beside the list.
+  useEffect(() => {
+    if (selectedParam && window.matchMedia?.('(max-width: 760px)').matches) window.scrollTo(0, 0)
+  }, [selectedParam])
+
   const refresh = async () => {
     try {
       const now = new Date()
@@ -301,7 +307,10 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
   const missingRank = form.type === '랭크매치' && form.ranks.length === 0
 
   return (
-    <section className="panel relative overflow-hidden" aria-label="예약">
+    // On phones the list and the detail take turns rather than stacking: with
+    // many reservations the detail otherwise sat below every card. The path
+    // decides which one shows (index.css), so back returns to the list.
+    <section className={`panel relative overflow-hidden${selectedParam ? ' has-selection' : ''}`} aria-label="예약">
       <div className="absolute inset-0 pointer-events-none opacity-25 [background-image:linear-gradient(rgba(230,57,70,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(230,57,70,0.04)_1px,transparent_1px)] [background-size:24px_24px]" />
       <div className="relative">
         <div className="flex flex-col gap-4 border-b border-border-light pb-4 sm:flex-row sm:items-end sm:justify-between">
@@ -418,7 +427,7 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
         {!showForm && noticeBanner && <div className="mt-3">{noticeBanner}</div>}
 
         <div className="reservation-content-grid grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.8fr)]">
-          <div className="space-y-3">
+          <div className="reservation-list space-y-3">
             {reservationsByStart.map(({ startAt, day, time, items: reservationsAtTime }) => (
               <section key={startAt} className="reservation-group" aria-label={`${day} ${time} 예약`}>
                 <div className="mb-3 flex items-baseline gap-3 border-b border-border pb-2">
@@ -446,6 +455,7 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
             // rather than letting the host find out by being rejected.
             const frozen = selectedReservation.joined > 0
             return <aside className={`reservation-detail ${selectedReservation.status === 'full' ? 'is-full' : ''}`} aria-label="선택한 예약 상세">
+              <button type="button" className="reservation-detail-back btn-ghost" onClick={() => navigate('/reservation')}><ChevronLeft size={15} aria-hidden="true" /> 목록으로</button>
               <div className="flex items-start justify-between gap-3"><div><p className="panel-meta mb-1">선택한 예약</p><p className="font-display text-3xl font-black text-white"><span className="text-base text-primary-text">{selectedReservation.day}</span> {selectedReservation.time}</p></div><span className={`border px-2 py-1 text-xs font-bold tracking-[0.12em] ${availability.className}`}>{availability.label}</span></div>
               <div className="mt-4 space-y-3 border-y border-border py-4 text-sm"><p className="flex items-center justify-between"><span className="text-txt-dim">예약자</span><strong className="text-txt">{selectedReservation.host}</strong></p>{selectedReservation.ranks.length > 0 && <div className="flex items-start justify-between gap-3"><span className="shrink-0 text-txt-dim">보유 계급</span><RankSummary ranks={selectedReservation.ranks} imageClassName="h-8" className="flex-1 justify-end" /></div>}<p className="flex items-center justify-between"><span className="text-txt-dim">종류</span><strong className="text-primary-text">{selectedReservation.type}</strong></p></div>
               <section className="reservation-roster" aria-label="참가자 명단">
