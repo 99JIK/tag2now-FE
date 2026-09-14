@@ -40,9 +40,7 @@ test.describe('Overview', () => {
     await expect(top.locator('img[alt="Alisa"]')).toBeVisible()
 
     // A weekly player absent from the leaderboard keeps its columns as dashes.
-    const unranked = weekly.locator('.overview-rank-row').filter({
-      has: page.locator('button[aria-label="UnrankedPlayer"]'),
-    })
+    const unranked = weekly.locator('.overview-rank-row', { hasText: 'UnrankedPlayer' })
     await expect(unranked.locator('.mini-char.is-empty')).toHaveCount(2)
   })
 
@@ -50,13 +48,13 @@ test.describe('Overview', () => {
     test.skip(isMobile, 'The mobile overview places the name and match count on their own row.')
     const top = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-row').first()
     const nameBox = await top.locator('.overview-rank-name').boundingBox()
-    const nameLabels = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-btn-label')
+    const nameLabel = top.locator('.overview-rank-btn-label')
     const detailBox = await top.locator('.overview-rank-detail').boundingBox()
     const detailTextBox = await top.locator('.overview-rank-detail').evaluate(element => {
       const range = document.createRange()
       range.selectNodeContents(element)
       const rect = range.getBoundingClientRect()
-      return { x: rect.x, width: rect.width }
+      return { x: rect.x, width: rect.width, lines: range.getClientRects().length }
     })
     const rankBox = await top.locator('.mini-char-rank').first().boundingBox()
     const portraitBox = await top.locator('.mini-char-portrait').first().boundingBox()
@@ -67,14 +65,16 @@ test.describe('Overview', () => {
     expect(portraitBox).not.toBeNull()
     expect(nameBox!.x + nameBox!.width).toBeLessThanOrEqual(detailBox!.x)
     expect(rankBox!.x - (detailTextBox.x + detailTextBox.width)).toBeGreaterThanOrEqual(10)
-    const invalidNames = await nameLabels.evaluateAll(elements => elements.flatMap(element => {
-      const name = element.textContent ?? ''
-      return name.length <= 9 && element.scrollWidth <= element.clientWidth
-        ? []
-        : [{ name, available: element.clientWidth, required: element.scrollWidth }]
-    }))
-    expect(invalidNames).toEqual([])
-    await expect(nameLabels.first()).toHaveText('TagComboK')
+    // Three-digit weekly counts are routine (the fixture's top player has 132),
+    // and a column too narrow for them broke "132판" across two lines — which
+    // the gap check above still passes, since it measures the wrapped box.
+    expect(detailTextBox.lines).toBe(1)
+    // The markup keeps the whole name; CSS shortens it with an ellipsis only
+    // when the column runs out, and the label never spills into the count.
+    const labelBox = await nameLabel.boundingBox()
+    expect(labelBox).not.toBeNull()
+    expect(labelBox!.x + labelBox!.width).toBeLessThanOrEqual(detailBox!.x)
+    await expect(nameLabel).toHaveText('TagComboKing')
     expect(rankBox!.width).toBeLessThanOrEqual(54.72)
     expect(portraitBox!.width).toBeCloseTo(36, 1)
     expect(portraitBox!.height).toBeCloseTo(36, 1)

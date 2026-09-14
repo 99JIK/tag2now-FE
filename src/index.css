@@ -551,7 +551,9 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
 .overview-link { flex: 0 0 auto; }
 
 .overview-rank-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
-.overview-rank-head, .overview-rank-row { display: grid; align-items: center; gap: 4px; grid-template-columns: 20px minmax(0,1fr) 40px 94.72px 94.72px; }
+/* 48px holds a three-digit count ("305판" is ~40px at 14px bold) after the
+   detail cell's 6px right padding; at 40px it broke onto two lines. */
+.overview-rank-head, .overview-rank-row { display: grid; align-items: center; gap: 4px; grid-template-columns: 20px minmax(0,1fr) 48px 94.72px 94.72px; }
 /* The leaderboard list ranks by row position, so it renders no detail cell
    and drops that track — the name column takes the freed width. */
 .overview-rank-list.has-no-detail .overview-rank-head,
@@ -601,7 +603,7 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
 }
 .mini-char.is-empty { color: var(--color-txt-faint); font-size: 11px; }
 /* At 72% of the original art size, 54.72 + 4 gap + 36 = 94.72px. The reclaimed
-   width leaves room for up to nine player-name characters beside match count. */
+   width goes to the player name, which ellipsises only when it still runs out. */
 .mini-char-rank { width: auto; min-width: 0; max-width: 54.72px; height: auto; object-fit: contain; }
 .mini-char-portrait { width: 36px; height: 36px; flex: 0 0 auto; object-fit: contain; }
 .mini-char-name { max-width: 100%; overflow: hidden; color: var(--color-txt-dim); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
