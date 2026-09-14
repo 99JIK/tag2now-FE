@@ -193,6 +193,16 @@ Match-type labels and the KST time format live in `reservationLabels.ts`, not
 replaces the whole API module with a mock, so anything the UI reads at import
 time has to sit outside it.
 
+The booking window — at least ten minutes out, before the next 06:00 KST — is
+the backend's rule, mirrored in `bookingWindow.ts` so the form can refuse a
+start instead of submitting it. Its constants are copies of `LEAD_TIME` and
+`DAY_END_HOUR` in tag2now-BE's `reservation/domain.py`: change both together.
+The server still rejects whatever a stale copy lets through.
+
+The list groups and sorts by `start_at`, not the `HH:MM` it displays, and labels
+each start 어제/오늘/내일 (`kstDayLabel`). A time alone is ambiguous here: the
+window crosses midnight, so "01:00" can follow "23:00".
+
 ### Error handling
 
 `main.tsx` registers a global `unhandledrejection` handler that shows a toast and calls `preventDefault()`. Rejected promises therefore surface to the user without a try/catch at every call site — but a caller that wants inline error state (as feature hooks do) must catch and store `e.message` itself.

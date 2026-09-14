@@ -11,6 +11,24 @@ export const MATCH_TYPE_LABELS: Record<ApiReservation['match_type'], string> = {
 
 export const kstTimeFormat = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false })
 
+// en-CA writes a date as YYYY-MM-DD, which Date.parse reads back as UTC
+// midnight — so two of them subtract to a whole number of days.
+export const kstDateKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' })
+const kstMonthDay = new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', month: 'numeric', day: 'numeric' })
+const RELATIVE_DAYS: Record<number, string> = { [-1]: '어제', 0: '오늘', 1: '내일' }
+
+/** Which Seoul day a start falls on, relative to now.
+ *
+ * The listing runs from an hour ago to the next 06:00, so everything it returns
+ * is yesterday, today or tomorrow — and a bare time cannot tell tonight's 23:00
+ * from the 01:00 after it. Anything further out is not something the server
+ * sends, but it is outside data, so it gets a plain M/D rather than a lie.
+ */
+export function kstDayLabel(startAt: Date, now: Date): string {
+  const days = (Date.parse(kstDateKey.format(startAt)) - Date.parse(kstDateKey.format(now))) / 86_400_000
+  return RELATIVE_DAYS[days] ?? kstMonthDay.format(startAt)
+}
+
 /** Every TTT2 rank, lowest first — the order the game itself promotes through,
  * which is the only thing that makes "highest rank" a meaningful phrase. Here
  * rather than in the tab because the overview ranks the same list. */

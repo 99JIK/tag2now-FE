@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { Clock3, Users } from 'lucide-react'
 import { reservationPath } from '@/config/routes'
 import type { ApiReservation } from '@/reservation/reservationApi'
-import { kstTimeFormat, MATCH_TYPE_LABELS } from '@/reservation/reservationLabels'
+import { kstDayLabel, kstTimeFormat, MATCH_TYPE_LABELS } from '@/reservation/reservationLabels'
 import RankSummary from '@/reservation/component/RankSummary'
 
 /** Only reservations still taking people — a full or matched one is not
@@ -23,12 +23,13 @@ export default function OpenReservations({ reservations, limit = 3 }: { reservat
     </div>
   )
 
+  const now = new Date()
   return (
     <ul className="overview-list">
       {joinable.map((r) => (
         <li key={r.id}>
           <Link className="overview-list-row overview-list-link" to={reservationPath(r.id)}>
-            <span className="overview-time"><Clock3 size={11} aria-hidden="true" />{kstTimeFormat.format(new Date(r.start_at))}</span>
+            <span className="overview-time"><Clock3 size={11} aria-hidden="true" />{kstDayLabel(new Date(r.start_at), now)} {kstTimeFormat.format(new Date(r.start_at))}</span>
             <div className="overview-list-main">
               <span className="overview-list-title">{r.host_display_name}</span>
               <span className="overview-list-sub">{MATCH_TYPE_LABELS[r.match_type]}</span>

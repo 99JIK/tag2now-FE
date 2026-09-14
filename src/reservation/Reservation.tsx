@@ -10,7 +10,8 @@ import { CalendarPlus, Check, ChevronDown, Clock3, Filter, LogIn, Plus, UserMinu
 import Select from '@/shared/components/Select'
 import ToggleGroup from '@/shared/components/ToggleGroup'
 import { reservationPath } from '@/config/routes'
-import { kstTimeFormat, MATCH_TYPE_LABELS, RANK_ORDER, sortRanksDescending } from '@/reservation/reservationLabels'
+import { kstDayLabel, kstTimeFormat, MATCH_TYPE_LABELS, RANK_ORDER, sortRanksDescending } from '@/reservation/reservationLabels'
+import { defaultStartTime, isBookable, resolveKstStart } from '@/reservation/bookingWindow'
 import CommentList from '@/reservation/component/CommentList'
 import RankSummary from '@/reservation/component/RankSummary'
 import type { LeaderboardEntry } from '@/shared/types'
@@ -20,6 +21,8 @@ type ReservationStatus = 'open' | 'full'
 
 type Reservation = {
   id: number
+  startAt: number
+  day: string
   time: string
   host: string
   ranks: string[]
@@ -39,10 +42,13 @@ const formMatchTypes: MatchType[] = ['랭크매치', '플레이어 매치', '상
 const matchTypeLabels = MATCH_TYPE_LABELS as Record<ApiReservation['match_type'], MatchType>
 const matchTypeValues: Record<MatchType, ApiReservation['match_type']> = { '랭크매치': 'rank_match', '플레이어 매치': 'player_match', '상관없음': 'any' }
 
-function fromApi(item: ApiReservation): Reservation {
+function fromApi(item: ApiReservation, now: Date): Reservation {
+  const startAt = new Date(item.start_at)
   return {
     id: item.id,
-    time: kstTimeFormat.format(new Date(item.start_at)),
+    startAt: startAt.getTime(),
+    day: kstDayLabel(startAt, now),
+    time: kstTimeFormat.format(startAt),
     host: item.host_display_name,
     ranks: item.host_ranks,
     type: matchTypeLabels[item.match_type],
@@ -72,21 +78,7 @@ const MAX_RANKS = 20
 
 type FormState = { time: string; type: MatchType; ranks: string[]; capacity: string; memo: string }
 
-const kstHourFormat = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', hour12: false })
-
-/** The next whole hour in Seoul, which is where a host most likely wants to start.
- *
- * Rounding down instead would always land in the past and be rejected by the
- * backend's ten-minute lead time. The 23:00 hour has no valid next hour at all —
- * the API takes a time of day with no date, so midnight resolves to *today*
- * midnight — and stays at 23:00 rather than offering a slot that cannot be booked.
- */
-function nextHourInSeoul(now = new Date()): string {
-  const hour = Number(kstHourFormat.format(now))
-  return `${String(Math.min(hour + 1, 23)).padStart(2, '0')}:00`
-}
-
-const blankForm = (): FormState => ({ time: nextHourInSeoul(), type: '랭크매치', ranks: [], capacity: '1', memo: '' })
+const blankForm = (): FormState => ({ time: defaultStartTime(new Date()), type: '랭크매치', ranks: [], capacity: '1', memo: '' })
 
 /** Reverse of the create mapping, so editing starts from what the host posted. */
 function toForm(reservation: Reservation): FormState {
@@ -157,7 +149,7 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
   const [showForm, setShowForm] = useState(false)
   const [rankPickerOpen, setRankPickerOpen] = useState(false)
   const [timePickerOpen, setTimePickerOpen] = useState(false)
-  const [draftTime, setDraftTime] = useState(nextHourInSeoul)
+  const [draftTime, setDraftTime] = useState(() => defaultStartTime(new Date()))
   const [notice, setNotice] = useState<{ text: string; tone: 'info' | 'error' }>({ text: '', tone: 'info' })
   const showNotice = (text: string) => setNotice({ text, tone: 'info' })
   // Stable across renders: CommentList takes this as a prop and reloads when its
@@ -169,7 +161,8 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
 
   const refresh = async () => {
     try {
-      const items = (await fetchReservations()).map(fromApi)
+      const now = new Date()
+      const items = (await fetchReservations()).map((item) => fromApi(item, now))
       setReservations(items)
       setJoinedIds(items.filter((item) => hasParticipation(item.id)).map((item) => item.id))
     } catch (error) { showError(error, '예약을 불러오지 못했습니다.') }
@@ -228,14 +221,20 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
     [reservations, typeFilter],
   )
   const selectedReservation = visibleReservations.find((reservation) => reservation.id === selectedId) ?? visibleReservations[0]
-  const reservationsByTime = useMemo(() => {
-    const groups = visibleReservations.reduce<Record<string, Reservation[]>>((result, reservation) => {
-      ;(result[reservation.time] ??= []).push(reservation)
+  // Grouped and ordered by the instant, not the wall-clock time: "01:00" sorts
+  // before "23:00" though it comes after it, and between 06:00 and 07:00 the
+  // list holds today's 05:30 (still in its grace hour) as well as tomorrow's.
+  const reservationsByStart = useMemo(() => {
+    const groups = visibleReservations.reduce<Record<number, Reservation[]>>((result, reservation) => {
+      ;(result[reservation.startAt] ??= []).push(reservation)
       return result
     }, {})
-    return Object.entries(groups)
-      .sort(([leftTime], [rightTime]) => leftTime.localeCompare(rightTime))
-      .map(([time, items]) => [time, [...items].sort((left, right) => Number(left.status === 'full') - Number(right.status === 'full'))] as const)
+    return Object.values(groups)
+      .sort(([left], [right]) => left.startAt - right.startAt)
+      .map((items) => {
+        const { startAt, day, time } = items[0]
+        return { startAt, day, time, items: [...items].sort((left, right) => Number(left.status === 'full') - Number(right.status === 'full')) }
+      })
   }, [visibleReservations])
 
   const handleJoin = async (id: number) => {
@@ -293,6 +292,14 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
     } catch (error) { showError(error, editingId === null ? '예약 생성에 실패했습니다.' : '예약 수정에 실패했습니다.') }
   }
 
+  // Read at render rather than on a timer of its own: the tab's 10s poll
+  // re-renders the form, so a time the clock overtakes while it sits open is
+  // caught within a poll.
+  const now = new Date()
+  const startDay = kstDayLabel(resolveKstStart(form.time, now), now)
+  const startBookable = isBookable(form.time, now)
+  const missingRank = form.type === '랭크매치' && form.ranks.length === 0
+
   return (
     <section className="panel relative overflow-hidden" aria-label="예약">
       <div className="absolute inset-0 pointer-events-none opacity-25 [background-image:linear-gradient(rgba(230,57,70,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(230,57,70,0.04)_1px,transparent_1px)] [background-size:24px_24px]" />
@@ -316,9 +323,10 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
             </div>
             <fieldset className="modal-field relative">
               <legend className="field-label">시작 시각</legend>
-              <button type="button" aria-label={`시작 시각 ${form.time}`} aria-haspopup="dialog" aria-expanded={timePickerOpen} onClick={() => { setDraftTime(form.time); setTimePickerOpen((open) => !open) }} className="input-base control-button w-full font-bold">
-                <span>{form.time}</span><Clock3 size={15} aria-hidden="true" className="text-primary" />
+              <button type="button" aria-label={`시작 시각 ${startDay} ${form.time}`} aria-describedby={startBookable ? undefined : 'reservation-time-error'} aria-haspopup="dialog" aria-expanded={timePickerOpen} onClick={() => { setDraftTime(form.time); setTimePickerOpen((open) => !open) }} className="input-base control-button w-full font-bold">
+                <span>{startDay} {form.time}</span><Clock3 size={15} aria-hidden="true" className="text-primary" />
               </button>
+              {!startBookable && <p id="reservation-time-error" className="mt-1 text-xs font-normal text-error">10분 뒤부터 다음 오전 6시 전까지만 예약할 수 있습니다.</p>}
               {timePickerOpen && <TimePickerDialog
                 draftTime={draftTime}
                 setDraftTime={setDraftTime}
@@ -381,7 +389,7 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
                 </div>
                 <div className="mt-2 flex justify-end"><button type="button" className="btn-ghost" onClick={() => setRankPickerOpen(false)}>선택 완료</button></div>
               </div>}
-              {form.type === '랭크매치' && form.ranks.length === 0 && <p className="mt-1 text-xs font-normal text-error">계급을 하나 이상 선택해 주세요.</p>}
+              {missingRank && <p className="mt-1 text-xs font-normal text-error">계급을 하나 이상 선택해 주세요.</p>}
             </fieldset>}
             {form.type !== '랭크매치' && <div className="modal-field"><span className="field-label">모집 인원</span>
               <Select label="모집 인원" value={form.capacity} options={[{ value: '1', label: '1명' }, { value: '2', label: '2명' }, { value: '3', label: '3명' }]} onChange={(capacity) => setForm({ ...form, capacity })} />
@@ -390,7 +398,7 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
               <input className="input-base block w-full" maxLength={140} placeholder="예: 부담 없이 1시간 랭매" value={form.memo} onChange={(event) => setForm({ ...form, memo: event.target.value })} />
             </label>
             {noticeBanner && <div className="col-span-full">{noticeBanner}</div>}
-            <div className="reservation-modal-actions col-span-full"><button className="btn-ghost" type="button" onClick={closeForm}>취소</button><button className="btn-primary" type="submit" disabled={form.type === '랭크매치' && form.ranks.length === 0}><CalendarPlus size={14} /> {editingId === null ? '예약 등록' : '예약 수정'}</button></div>
+            <div className="reservation-modal-actions col-span-full"><button className="btn-ghost" type="button" onClick={closeForm}>취소</button><button className="btn-primary" type="submit" disabled={missingRank || !startBookable}><CalendarPlus size={14} /> {editingId === null ? '예약 등록' : '예약 수정'}</button></div>
           </ReservationFormDialog>
         )}
 
@@ -411,10 +419,10 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
 
         <div className="reservation-content-grid grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.8fr)]">
           <div className="space-y-3">
-            {reservationsByTime.map(([time, reservationsAtTime]) => (
-              <section key={time} className="reservation-group" aria-label={`${time} 예약`}>
+            {reservationsByStart.map(({ startAt, day, time, items: reservationsAtTime }) => (
+              <section key={startAt} className="reservation-group" aria-label={`${day} ${time} 예약`}>
                 <div className="mb-3 flex items-baseline gap-3 border-b border-border pb-2">
-                  <h3 className="font-display text-2xl font-black tracking-[0.08em] text-white">{time}</h3>
+                  <h3 className="font-display text-2xl font-black tracking-[0.08em] text-white"><span className="text-sm text-primary-text">{day}</span> {time}</h3>
                   <span className="text-xs font-bold tracking-[0.12em] text-txt-dim">예약 {reservationsAtTime.length}건</span>
                 </div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -438,7 +446,7 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
             // rather than letting the host find out by being rejected.
             const frozen = selectedReservation.joined > 0
             return <aside className={`reservation-detail ${selectedReservation.status === 'full' ? 'is-full' : ''}`} aria-label="선택한 예약 상세">
-              <div className="flex items-start justify-between gap-3"><div><p className="panel-meta mb-1">선택한 예약</p><p className="font-display text-3xl font-black text-white">{selectedReservation.time}</p></div><span className={`border px-2 py-1 text-xs font-bold tracking-[0.12em] ${availability.className}`}>{availability.label}</span></div>
+              <div className="flex items-start justify-between gap-3"><div><p className="panel-meta mb-1">선택한 예약</p><p className="font-display text-3xl font-black text-white"><span className="text-base text-primary-text">{selectedReservation.day}</span> {selectedReservation.time}</p></div><span className={`border px-2 py-1 text-xs font-bold tracking-[0.12em] ${availability.className}`}>{availability.label}</span></div>
               <div className="mt-4 space-y-3 border-y border-border py-4 text-sm"><p className="flex items-center justify-between"><span className="text-txt-dim">예약자</span><strong className="text-txt">{selectedReservation.host}</strong></p>{selectedReservation.ranks.length > 0 && <div className="flex items-start justify-between gap-3"><span className="shrink-0 text-txt-dim">보유 계급</span><RankSummary ranks={selectedReservation.ranks} imageClassName="h-8" className="flex-1 justify-end" /></div>}<p className="flex items-center justify-between"><span className="text-txt-dim">종류</span><strong className="text-primary-text">{selectedReservation.type}</strong></p></div>
               <section className="reservation-roster" aria-label="참가자 명단">
                 <div className="reservation-roster-heading">

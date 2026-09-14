@@ -12,8 +12,8 @@ async function pickRank(modal: Locator, rank = 'Vanquisher') {
 
 test.describe('Reservation', () => {
   test.beforeEach(async ({ page }) => {
-    // The default start time is the next whole hour in Seoul, so pin the clock
-    // to 20:10 KST and the form opens on a predictable 21:00.
+    // The default start time follows the clock, so pin it to 20:10 KST and the
+    // form opens on a predictable 21:00 today.
     await page.clock.install({ time: new Date('2026-08-28T11:10:00Z') })
     await page.clock.runFor(0)
     await signInAs(page, '나')
@@ -37,7 +37,7 @@ test.describe('Reservation', () => {
     await page.keyboard.press('ArrowDown')
     await page.waitForTimeout(500)
     await page.getByRole('dialog', { name: '시간 선택' }).getByRole('button', { name: '선택 완료' }).click()
-    await expect(timeButton).toHaveAttribute('aria-label', '시작 시각 22:00')
+    await expect(timeButton).toHaveAttribute('aria-label', '시작 시각 오늘 22:00')
 
     await modal.getByRole('button', { name: '계급 선택' }).click()
     const rankPicker = page.locator('#reservation-rank-picker')
@@ -171,6 +171,10 @@ test.describe('Reservation deletion', () => {
   const someoneElse = reservationAt(21, { id: 10, host_display_name: '상대', host_ranks: ['Yaksa'] })
 
   async function openReservationTab(page: import('@playwright/test').Page, reservations = [someoneElse]) {
+    // The form refuses a start outside the booking window, so on the real clock
+    // these would fail in the ten minutes before 06:00 KST. 20:10 KST, as above.
+    await page.clock.install({ time: new Date('2026-08-28T11:10:00Z') })
+    await page.clock.runFor(0)
     await signInAs(page, '나')
     await mockAllApis(page, { reservations })
     await page.goto('/')
@@ -229,6 +233,10 @@ test.describe('Reservation editing', () => {
   const someoneElse = reservationAt(21, { id: 10, host_display_name: '상대', host_ranks: ['Yaksa'] })
 
   async function openReservationTab(page: import('@playwright/test').Page, reservations = [someoneElse]) {
+    // Pinned for the same reason as the deletion specs: the form checks the
+    // start against the clock, and the real one reaches 05:50 KST once a day.
+    await page.clock.install({ time: new Date('2026-08-28T11:10:00Z') })
+    await page.clock.runFor(0)
     await signInAs(page, '나')
     await mockAllApis(page, { reservations })
     await page.goto('/')
@@ -240,9 +248,8 @@ test.describe('Reservation editing', () => {
     await page.getByRole('button', { name: '+ 예약 추가' }).click()
     const modal = page.getByRole('dialog', { name: '예약 추가' })
     await pickRank(modal)
-    // This describe runs on the real clock, so the form opens on whatever the
-    // next whole hour happens to be. What the editor owes us is that time back,
-    // not a fixed one — carry it out rather than hard-coding it.
+    // What the editor owes us is the time the form posted — carry it out
+    // rather than restating the default here.
     const postedTime = await modal.getByRole('button', { name: /시작 시각/ }).getAttribute('aria-label')
     await modal.getByRole('button', { name: '예약 등록' }).click()
     await page.getByRole('button', { name: /나 모집중/ }).click()

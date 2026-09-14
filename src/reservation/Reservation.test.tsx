@@ -146,6 +146,14 @@ function selectRanks(...ranks: string[]) {
   fireEvent.click(within(picker).getByRole('button', { name: '선택 완료' }))
 }
 
+/** Open the time picker, turn both wheels, confirm. */
+function pickTime(hour: string, minute: string) {
+  fireEvent.click(screen.getByRole('button', { name: /시작 시각/ }))
+  fireEvent.change(screen.getByLabelText('시간 휠'), { target: { value: hour } })
+  fireEvent.change(screen.getByLabelText('분 휠'), { target: { value: minute } })
+  fireEvent.click(within(screen.getByRole('dialog', { name: '시간 선택' })).getByRole('button', { name: '선택 완료' }))
+}
+
 // The filter bar offers radios with the same labels, so the form's own
 // match-type radios have to be reached through their group.
 const matchTypeControl = () => within(screen.getByRole('radiogroup', { name: '매치 종류' }))
@@ -219,27 +227,28 @@ describe('Reservation', () => {
     expect(screen.getByRole('button', { name: /계급 선택, 현재/ }).querySelectorAll('img')).toHaveLength(20)
   })
 
-  it('defaults the start time to the next whole hour in Seoul', () => {
+  it('defaults to the first whole hour that clears the ten-minute lead', () => {
+    // 14:00 is only five minutes out, which the backend refuses.
     vi.setSystemTime(new Date('2026-08-28T04:55:00Z'))  // 13:55 KST
     openReservationModal()
 
-    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 14:00')
+    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 오늘 15:00')
   })
 
   it('defaults to the next hour even moments after the last one struck', () => {
     vi.setSystemTime(new Date('2026-08-28T04:01:00Z'))  // 13:01 KST
     openReservationModal()
 
-    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 14:00')
+    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 오늘 14:00')
   })
 
-  it('stays at 23:00 in the last hour, which has no bookable next hour', () => {
-    // The API takes a time of day with no date, so midnight would resolve to
-    // today's midnight and be rejected as past.
+  it('rolls the default past midnight in the last hour', () => {
+    // The backend reads a time Seoul has passed as tomorrow's, so the next hour
+    // it will take is tomorrow's 00:00.
     vi.setSystemTime(new Date('2026-08-28T14:30:00Z'))  // 23:30 KST
     openReservationModal()
 
-    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 23:00')
+    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 내일 00:00')
   })
 
   it('offers the hour that is next when the form opens, not when the page loaded', () => {
@@ -247,24 +256,49 @@ describe('Reservation', () => {
     vi.setSystemTime(new Date('2026-08-28T06:20:00Z'))  // 15:20 KST, two hours later
     fireEvent.click(screen.getByRole('button', { name: '+ 예약 추가' }))
 
-    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 16:00')
+    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 오늘 16:00')
   })
 
   it('keeps the previous time on cancel and commits it on confirm', () => {
     openReservationModal()
-    const timeButton = screen.getByRole('button', { name: '시작 시각 21:00' })
+    const timeButton = screen.getByRole('button', { name: '시작 시각 오늘 21:00' })
 
     fireEvent.click(timeButton)
     fireEvent.change(screen.getByLabelText('시간 휠'), { target: { value: '22' } })
     fireEvent.change(screen.getByLabelText('분 휠'), { target: { value: '35' } })
     fireEvent.click(within(screen.getByRole('dialog', { name: '시간 선택' })).getByRole('button', { name: '취소' }))
-    expect(timeButton).toHaveAttribute('aria-label', '시작 시각 21:00')
+    expect(timeButton).toHaveAttribute('aria-label', '시작 시각 오늘 21:00')
 
-    fireEvent.click(timeButton)
-    fireEvent.change(screen.getByLabelText('시간 휠'), { target: { value: '22' } })
-    fireEvent.change(screen.getByLabelText('분 휠'), { target: { value: '35' } })
-    fireEvent.click(within(screen.getByRole('dialog', { name: '시간 선택' })).getByRole('button', { name: '선택 완료' }))
-    expect(timeButton).toHaveAttribute('aria-label', '시작 시각 22:35')
+    pickTime('22', '35')
+    expect(timeButton).toHaveAttribute('aria-label', '시작 시각 오늘 22:35')
+  })
+
+  it('marks a time Seoul has already passed as tomorrow', () => {
+    openReservationModal()
+    pickTime('01', '30')
+
+    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 내일 01:30')
+    expect(screen.queryByText(/오전 6시 전까지만/)).not.toBeInTheDocument()
+  })
+
+  it('refuses a time past dawn instead of letting the backend reject it', () => {
+    openReservationModal()
+    selectRanks('Vanquisher')
+    pickTime('07', '00')  // at 20:10, that is tomorrow morning: after the 06:00 cut-off
+
+    expect(screen.getByText('10분 뒤부터 다음 오전 6시 전까지만 예약할 수 있습니다.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '예약 등록' })).toBeDisabled()
+  })
+
+  it('stops a start time the clock has overtaken from being submitted', () => {
+    openReservationModal()
+    selectRanks('Vanquisher')
+    expect(screen.getByRole('button', { name: '예약 등록' })).toBeEnabled()
+
+    vi.setSystemTime(new Date('2026-08-28T11:55:00Z'))  // 20:55 KST: 21:00 is inside the lead now
+    fireEvent.change(screen.getByLabelText(/메모/), { target: { value: '곧 시작' } })
+
+    expect(screen.getByRole('button', { name: '예약 등록' })).toBeDisabled()
   })
 
   it('creates a rank reservation whose card shows every rank the host picked', async () => {
@@ -787,5 +821,45 @@ describe('the comment thread on a reservation', () => {
 
     expect(within(thread).getByLabelText('댓글 내용')).toBeDisabled()
     expect(within(thread).getByPlaceholderText('먼저 유저명을 설정해 주세요')).toBeInTheDocument()
+  })
+})
+
+describe('the day a reservation starts on', () => {
+  const startingAt = (id: number, host: string, start_at: string): ApiReservation => ({ ...apiReservation, id, host_display_name: host, start_at })
+  const groupNames = () => screen.getAllByRole('region', { name: / 예약$/ }).map((group) => group.getAttribute('aria-label'))
+
+  it('lists tonight before the small hours that follow it', async () => {
+    vi.setSystemTime(new Date('2026-08-28T13:00:00Z'))  // 22:00 KST
+    // In the backend's own order. Sorted as text, "01:00" jumped ahead of "23:00".
+    vi.mocked(fetchReservations).mockResolvedValue([
+      startingAt(1, '밤', '2026-08-28T14:00:00Z'),    // 23:00 KST
+      startingAt(2, '새벽', '2026-08-28T16:00:00Z'),  // 01:00 KST on the 29th
+    ])
+    render(<MemoryRouter><Reservation /></MemoryRouter>)
+    await screen.findByRole('button', { name: /새벽/ })
+
+    expect(groupNames()).toEqual(['오늘 23:00 예약', '내일 01:00 예약'])
+  })
+
+  it('keeps one time of day on two different days apart', async () => {
+    vi.setSystemTime(new Date('2026-08-27T21:20:00Z'))  // 06:20 KST on the 28th
+    // Today's 05:30 is still in its grace hour; tomorrow's is already bookable.
+    vi.mocked(fetchReservations).mockResolvedValue([
+      startingAt(1, '먼저', '2026-08-27T20:30:00Z'),
+      startingAt(2, '나중', '2026-08-28T20:30:00Z'),
+    ])
+    render(<MemoryRouter><Reservation /></MemoryRouter>)
+    await screen.findByRole('button', { name: /나중/ })
+
+    expect(groupNames()).toEqual(['오늘 05:30 예약', '내일 05:30 예약'])
+  })
+
+  it('names the day in the detail panel', async () => {
+    vi.setSystemTime(new Date('2026-08-28T13:00:00Z'))  // 22:00 KST
+    vi.mocked(fetchReservations).mockResolvedValue([startingAt(2, '새벽', '2026-08-28T16:00:00Z')])
+    render(<MemoryRouter><Reservation /></MemoryRouter>)
+    fireEvent.click(await screen.findByRole('button', { name: /새벽/ }))
+
+    expect(screen.getByRole('complementary', { name: '선택한 예약 상세' })).toHaveTextContent('내일 01:00')
   })
 })

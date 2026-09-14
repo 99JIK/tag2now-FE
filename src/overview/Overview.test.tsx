@@ -108,6 +108,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks()
+  vi.useRealTimers()
 })
 
 describe('Overview', () => {
@@ -300,6 +301,14 @@ describe('Overview', () => {
     const row = screen.getByRole('link', { name: /HostPlayer/ })
 
     expect(row.querySelector('img')).toBeNull()
+  })
+
+  // A bare time cannot say whether 01:00 is tonight or the night after.
+  it('names the day each reservation starts on', () => {
+    vi.setSystemTime(new Date('2026-09-02T11:00:00Z'))  // 20:00 KST, before HostOne's 21:00
+    renderOverview()
+
+    expect(screen.getByRole('link', { name: /HostOne/ })).toHaveTextContent('오늘 21:00')
   })
 
   it('shows the latest community posts', () => {
