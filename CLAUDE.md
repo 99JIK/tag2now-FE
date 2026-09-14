@@ -114,9 +114,12 @@ data the page already holds.
 
 `useOverview` batches those four with `Promise.allSettled`, and a rejected
 source degrades to an empty list. One failing endpoint therefore costs its own
-card, not the page. It polls with a `null` interval — a snapshot with a manual
-refresh, since only the room figures are genuinely live and those stay fresh
-through App's poll.
+card, not the page. It polls with a `null` interval — a snapshot, since only
+the room figures are genuinely live and those stay fresh through App's poll.
+There is no refresh button: the route remounts when the reader leaves the tab
+and comes back, which refetches, and the error state keeps its own retry. The
+panel's h2 is `sr-only` — it holds the heading outline together (h1 → h2 →
+the cards' h3) without spending a toolbar's height above the figures.
 
 **Two joins worth knowing:**
 

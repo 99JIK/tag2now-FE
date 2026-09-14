@@ -36,8 +36,9 @@ function settledOr<T>(result: PromiseSettledResult<unknown>, fallback: T): T {
   return result.status === 'fulfilled' ? (result.value as T) : fallback
 }
 
-/** No interval: the overview is a snapshot with a manual refresh. Rooms — the
- * only genuinely live figure on the page — stays fresh through App's own poll.
+/** No interval: the overview is a snapshot, fetched each time its route mounts,
+ * so leaving the tab and coming back refreshes it. Rooms — the only genuinely
+ * live figure on the page — stays fresh through App's own poll.
  */
 export default function useOverview(): PolledState<OverviewData> {
   return usePolledData(fetchOverview, null)

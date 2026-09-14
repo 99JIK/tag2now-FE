@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, CalendarDays, Crown, MessageSquareText, RefreshCw, TrendingUp, Trophy, Users } from 'lucide-react'
+import { Activity, CalendarDays, Crown, MessageSquareText, TrendingUp, Trophy, Users } from 'lucide-react'
 import DailyChart from '@/shared/components/DailyChart'
 import PlayerHistoryPanel from '@/shared/components/PlayerHistoryPanel'
 import { panelStatus } from '@/shared/util/panelStatus'
@@ -83,7 +83,7 @@ const weeklyRows = (players: WeeklyTopPlayer[], entries: LeaderboardEntry[]): To
 }
 
 export default function Overview({ rooms, roomsLoading, leaderboardEntries = [], leaderboardTotal }: OverviewProps) {
-  const { data, loading, error, refreshing, refresh } = useOverview()
+  const { data, loading, error, refresh } = useOverview()
   const [selectedNpid, setSelectedNpid] = useState<string | null>(null)
 
   // The panel wants the leaderboard row when there is one; a weekly-top player
@@ -102,22 +102,11 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
 
   return (
     <div className="panel overview-panel">
-      <div className="section-toolbar compact-toolbar">
-        <div className="section-title">
-          <span className="section-icon"><TrendingUp size={15} aria-hidden="true" /></span>
-          {/* h2, not h3: this names the whole panel, and the cards below are
-              h3. The h2 that used to sit above it went with .content-heading,
-              which left the page jumping h1 to h3. */}
-          <div><h2>한눈에 보기</h2><p>지금 서버에서 벌어지는 일</p></div>
-        </div>
-        {/* Four requests go out and nothing already on screen changes until all
-            of them land, so without a state here the click reads as ignored.
-            The reduced-motion rule freezes the spinner, which is why the
-            disabled dimming carries the signal rather than merely echoing it. */}
-        <button type="button" className="btn-ghost" onClick={refresh} disabled={refreshing}>
-          <RefreshCw size={14} aria-hidden="true" className={refreshing ? 'animate-spin' : undefined} /> 새로고침
-        </button>
-      </div>
+      {/* Kept for the outline, not the eye: the cards below are h3, and without
+          an h2 the page jumps h1 to h3. The visible title and its refresh
+          button went so the summary opens on the figures — the tab already
+          names the page, and coming back to it fetches afresh. */}
+      <h2 className="sr-only">한눈에 보기</h2>
 
       <div className="kpi-grid">
         <KpiCard icon={Users} label="접속자" value={kpi.players} hint="지금 방에 있는 인원" live linkLabel="매치" to={ROOMS_PATH} />
@@ -129,7 +118,7 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
       {/* The two cards that expire, above the chart rather than below it. Both
           carry something the reader can still act on --- a reservation with a
           seat left, a post nobody has answered --- and the chart is a seven-day
-          trend that reads the same tomorrow. Sitting behind its 244px they were
+          trend that reads the same tomorrow. Sitting behind the chart they were
           the last thing reached on a phone, which is backwards for the only
           part of this page with a deadline. */}
       <div className="overview-grid">
@@ -145,7 +134,7 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
       <section className="chart-panel overview-chart" aria-labelledby="overview-daily-heading">
         {/* A sibling of the four card sections, so it takes their level. */}
         <h3 id="overview-daily-heading">최근 7일 접속자 추이</h3>
-        <DailyChart data={data?.daily ?? []} height={200} axisGutter={0} />
+        <DailyChart data={data?.daily ?? []} height={160} axisGutter={0} />
       </section>
 
       {/* Kept below the chart: a ranking is slow-moving reference data with a

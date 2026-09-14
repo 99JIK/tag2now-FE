@@ -128,22 +128,6 @@ describe('Overview', () => {
     expect(refresh).toHaveBeenCalledOnce()
   })
 
-  // A refresh replaces data the page is already showing, so nothing moves
-  // while the four requests are out. The button is the only thing that can say
-  // the click landed, and blocking it also stops a second click piling on.
-  it('blocks the refresh control while a refresh is in flight', () => {
-    mockedUseOverview.mockReturnValue(polled(OVERVIEW_DATA, { refreshing: true }))
-    renderOverview()
-
-    expect(screen.getByRole('button', { name: '새로고침' })).toBeDisabled()
-  })
-
-  it('leaves the refresh control takeable once the data has settled', () => {
-    renderOverview()
-
-    expect(screen.getByRole('button', { name: '새로고침' })).toBeEnabled()
-  })
-
   it('renders live room KPIs from props rather than fetching them', () => {
     renderOverview()
 

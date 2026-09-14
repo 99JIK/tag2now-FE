@@ -173,7 +173,7 @@ test.describe('Overview', () => {
     await page.goBack()
 
     await expect(page).toHaveURL(/\/$/)
-    await expect(page.getByRole('heading', { name: '한눈에 보기' })).toBeVisible()
+    await expect(page.getByRole('region', { name: '모집 중인 예약' })).toBeVisible()
   })
 
   test('a failing source costs only its own card', async ({ page }) => {
@@ -184,7 +184,7 @@ test.describe('Overview', () => {
 
     // The history endpoints are down, but rooms still are not: the KPI row and
     // the reservation card have to survive their neighbour failing.
-    await expect(page.getByRole('heading', { name: '한눈에 보기' })).toBeVisible()
+    await expect(page.getByRole('region', { name: '모집 중인 예약' })).toBeVisible()
     await expect(page.getByRole('region', { name: '주간 철악귀' })).toContainText('주간 기록 없음')
   })
 })
