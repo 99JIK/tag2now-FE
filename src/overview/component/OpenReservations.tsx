@@ -9,7 +9,9 @@ import RankSummary from '@/reservation/component/RankSummary'
  * something the reader can act on from a summary screen. */
 const isJoinable = (r: ApiReservation) => r.status === 'open' && r.participant_count < r.capacity
 
-export default function OpenReservations({ reservations, limit = 3 }: { reservations: ApiReservation[]; limit?: number }) {
+// Two, matching OVERVIEW_POSTS in the card beside it; the rest are one click
+// away, and the nav badge still counts them all.
+export default function OpenReservations({ reservations, limit = 2 }: { reservations: ApiReservation[]; limit?: number }) {
   const joinable = reservations.filter(isJoinable).slice(0, limit)
   // Two lines, the shape panelStatus already uses: the terse uppercase label
   // .state-msg is styled for, then a way forward. An empty board is the best

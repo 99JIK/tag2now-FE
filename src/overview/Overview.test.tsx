@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Overview from '@/overview/Overview'
 import type { OverviewData } from '@/overview/types'
@@ -293,6 +293,19 @@ describe('Overview', () => {
     renderOverview()
 
     expect(screen.getByRole('link', { name: /HostOne/ })).toHaveTextContent('오늘 21:00')
+  })
+
+  // The reservation and post cards share a grid row, so a third item in either
+  // would set the height of both; the rest are a click away on the tab.
+  it('shows at most two open reservations', () => {
+    const open = OVERVIEW_DATA.reservations[0]
+    mockedUseOverview.mockReturnValue(polled({
+      ...OVERVIEW_DATA,
+      reservations: [1, 2, 3].map((id) => ({ ...open, id, host_display_name: `Host${id}` })),
+    }))
+    renderOverview()
+
+    expect(within(screen.getByRole('region', { name: '모집 중인 예약' })).getAllByRole('listitem')).toHaveLength(2)
   })
 
   it('shows the latest community posts', () => {

@@ -6,7 +6,9 @@ import type { OverviewData } from '@/overview/types'
 
 export const OVERVIEW_DAYS = 7
 export const OVERVIEW_TOP_N = 5
-export const OVERVIEW_POSTS = 3
+// Two, as the reservation card beside it: the pair share a grid row, so the
+// taller one sets its height and a third item in either costs the whole row.
+export const OVERVIEW_POSTS = 2
 
 /** One settled batch rather than four independent states.
  *
