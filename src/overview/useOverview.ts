@@ -1,5 +1,7 @@
 import { GET } from '@/shared/util/api'
 import usePolledData, { type PolledState } from '@/shared/hooks/usePolledData'
+import { API } from '@/config/endpoints'
+import { POLL } from '@/config/polling'
 import { fetchPosts } from '@/community/communityApi'
 import { fetchReservations } from '@/reservation/reservationApi'
 import type { OverviewData } from '@/overview/types'
@@ -18,8 +20,8 @@ export const OVERVIEW_POSTS = 3
  */
 export const fetchOverview = async (): Promise<OverviewData> => {
   const [daily, weeklyTop, posts, reservations] = await Promise.allSettled([
-    GET('history/stats/daily', { days: OVERVIEW_DAYS }),
-    GET('history/stats/weekly-top', { limit: OVERVIEW_TOP_N }),
+    GET(API.dailyStats().path, { days: OVERVIEW_DAYS }),
+    GET(API.weeklyTop().path, { limit: OVERVIEW_TOP_N }),
     fetchPosts(1, OVERVIEW_POSTS),
     fetchReservations(),
   ])
@@ -40,5 +42,5 @@ function settledOr<T>(result: PromiseSettledResult<unknown>, fallback: T): T {
  * only genuinely live figure on the page — stays fresh through App's own poll.
  */
 export default function useOverview(): PolledState<OverviewData> {
-  return usePolledData(fetchOverview, null)
+  return usePolledData(fetchOverview, POLL.overview)
 }
