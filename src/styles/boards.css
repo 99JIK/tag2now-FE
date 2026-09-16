@@ -49,8 +49,16 @@
 .post-row-time { overflow: hidden; color: var(--color-txt-faint); font-size: var(--text-3xs); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
 .post-row:first-child { border-top: 0; }
 .post-row:hover { background: color-mix(in srgb, var(--color-primary) 8%, transparent); }
-.post-detail-header { padding: 12px 0; border-bottom: 1px solid var(--color-border-light); }
-.post-detail-header h2 { margin: 12px 0 0; color: var(--color-txt); font-size: var(--text-md); line-height: 1.35; }
+.post-detail-header { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--color-border-light); }
+.post-detail-header h2 { margin: 0; color: var(--color-txt); font-size: var(--text-md); line-height: 1.35; }
+/* The post's own tags, and the host's controls pushed to the far edge. */
+.post-detail-top { display: flex; width: 100%; align-items: center; gap: 8px; }
+.post-detail-owner-actions { display: flex; flex: 0 0 auto; gap: 8px; margin-left: auto; }
+/* One line: who, then when. The dot is what joins them --- without it the two
+   read as separate facts that happen to share a row. */
+.post-detail-byline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.post-detail-time { color: var(--color-txt-faint); font-size: var(--text-2xs); }
+.post-detail-time::before { content: '·'; margin-right: 8px; color: var(--color-txt-faint); }
 .post-detail-body { min-height: 150px; padding: 16px 4px; border-bottom: 1px solid var(--color-border-light); }
 .post-detail-body p { margin: 0; color: var(--color-txt); font-size: var(--text-13); line-height: 1.7; white-space: pre-wrap; overflow-wrap: anywhere; }
 .comment-heading { margin: 16px 0 8px; color: var(--color-txt-dim); font-size: var(--text-2xs); font-weight: var(--weight-strong); }

@@ -88,26 +88,32 @@ export default function PostDetail({ post, username, onBack, onRefresh, ensureId
         <ArrowLeft size={14} aria-hidden="true" /> 목록
       </button>
 
+      {/* Tags, then the title, then who wrote it and when.
+          It used to run tags+time, author, title - so the heading of the page
+          was its third line, and the two images stacked at the same left edge
+          in the same size with nothing saying which belonged to the post and
+          which to the person. The time sat with the tags, where it describes
+          nothing; it belongs to the byline, which is the line that answers
+          "who, and when". */}
       <header className="post-detail-header">
-        <div className="flex items-center gap-2 mb-2">
+        <div className="post-detail-top">
           <PostTypeBadge postType={post.post_type} characters={post.characters ?? []} size="md" />
-          <span className="text-sm text-txt-dim">{formatTimeAgo(post.created_at)}</span>
           {username && post.author === username && (
-            <div className="ml-auto flex gap-2">
-            <button onClick={() => setEditing(true)} className="btn-ghost inline-flex items-center gap-1">
-              <FilePenLine size={13} aria-hidden="true" /> 수정
-            </button>
-            <button
-              onClick={handleDelete}
-              className="btn-danger ml-auto uppercase tracking-[0.12em]"
-            >
-              <Trash2 size={13} aria-hidden="true" /> 삭제
-            </button>
+            <div className="post-detail-owner-actions">
+              <button onClick={() => setEditing(true)} className="btn-ghost inline-flex items-center gap-1">
+                <FilePenLine size={13} aria-hidden="true" /> 수정
+              </button>
+              <button onClick={handleDelete} className="btn-danger uppercase tracking-[0.12em]">
+                <Trash2 size={13} aria-hidden="true" /> 삭제
+              </button>
             </div>
           )}
         </div>
-        <AuthorBadge name={post.author} entries={leaderboardEntries} className="author-badge-lg inline-flex mb-2" />
         <h2>{post.title}</h2>
+        <div className="post-detail-byline">
+          <AuthorBadge name={post.author} entries={leaderboardEntries} className="author-badge-lg inline-flex" />
+          <span className="post-detail-time">{formatTimeAgo(post.created_at)}</span>
+        </div>
       </header>
       <div className="post-detail-body"><p>{post.body}</p></div>
       {post.youtube_video_id && <YouTubeVideo videoId={post.youtube_video_id} />}
