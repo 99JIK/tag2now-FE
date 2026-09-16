@@ -43,7 +43,6 @@ test.describe('Error states', () => {
     await mockAllApis(page)
 
     // Re-navigating should recover
-    await skipPatchNotes(page)
     await page.goto('/')
     await goToMatchTab(page)
     await expect(page.getByRole('alert')).toHaveCount(0)
