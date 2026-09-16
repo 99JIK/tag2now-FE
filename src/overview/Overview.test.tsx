@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import Overview from '@/overview/Overview'
 import type { OverviewData } from '@/overview/types'
@@ -118,6 +118,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.clearAllMocks()
+  vi.useRealTimers()
 })
 
 describe('Overview', () => {
@@ -179,7 +180,8 @@ describe('Overview', () => {
     renderOverview()
 
     expect(kpiValue('모집 중인 예약')).toBe('5')
-    const more = screen.getByRole('link', { name: '외 2건 더 보기' })
+    // Five joinable, two shown.
+    const more = screen.getByRole('link', { name: '외 3건 더 보기' })
     expect(more).toHaveAttribute('href', '/reservation')
   })
 
@@ -353,6 +355,31 @@ describe('Overview', () => {
     const row = screen.getByRole('link', { name: /HostPlayer/ })
 
     expect(row.querySelector('img')).toBeNull()
+  })
+
+  // A bare time cannot say whether 01:00 is tonight or the night after.
+  it('names the day each reservation starts on', () => {
+    vi.setSystemTime(new Date('2026-09-02T11:00:00Z'))  // 20:00 KST, before HostOne's 21:00
+    renderOverview()
+
+    expect(screen.getByRole('link', { name: /HostOne/ })).toHaveTextContent('오늘 21:00')
+  })
+
+  // The reservation and post cards share a grid row, so a third item in either
+  // would set the height of both; the rest are a click away on the tab — and
+  // the remainder row is what says how many that is, so it is a third listitem
+  // rather than a fourth reservation.
+  it('shows at most two open reservations, then says how many are left', () => {
+    const open = OVERVIEW_DATA.reservations[0]
+    mockedUseOverview.mockReturnValue(polled({
+      ...OVERVIEW_DATA,
+      reservations: [1, 2, 3].map((id) => ({ ...open, id, host_display_name: `Host${id}` })),
+    }))
+    renderOverview()
+
+    const card = within(screen.getByRole('region', { name: '모집 중인 예약' }))
+    expect(card.getAllByRole('link', { name: /Host/ })).toHaveLength(2)
+    expect(card.getByRole('link', { name: '외 1건 더 보기' })).toBeInTheDocument()
   })
 
   it('shows the latest community posts', () => {

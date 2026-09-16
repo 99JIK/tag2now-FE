@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { mockAllApis, dismissPatchNotes, goToMatchTab, skipPatchNotes } from '../helpers/mock-api'
+import { goToMatchTab, mockAllApis, skipPatchNotes } from '../helpers/mock-api'
 
 test.describe('Rooms', () => {
   test.beforeEach(async ({ page }) => {
     await mockAllApis(page)
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await goToMatchTab(page)
   })
 
@@ -44,12 +44,72 @@ test.describe('Rooms', () => {
     await requestPromise
   })
 
+  /* A waiting row lays its names out beside the rank image. On phones a
+   * full-width button rule meant for the in-game cells once pushed every name
+   * onto a line of its own below the image — still visible, still clickable,
+   * so only comparing boxes catches it. */
+  test('waiting players sit on the same line as their rank image', async ({ page }) => {
+    const warrior = { id: 2, name: 'Warrior', tier: 'B' }
+    await mockAllApis(page, {
+      rooms: {
+        rank_match: [
+          { room_id: 1002, owner_online_name: 'TagComboKing', rank_info: warrior, max_slots: 2, users: [{ online_name: 'TagComboKing', np_id: 'u003' }] },
+          { room_id: 1003, owner_online_name: 'Kaz', rank_info: warrior, max_slots: 2, users: [{ online_name: 'Kaz', np_id: 'u007' }] },
+        ],
+        player_match: [],
+      },
+    })
+    await page.goto('/')
+    await goToMatchTab(page)
+
+    const row = page.getByRole('row').filter({ has: page.getByRole('button', { name: 'TagComboKing' }) })
+    const image = (await row.getByRole('img', { name: 'Warrior' }).boundingBox())!
+    const name = (await row.getByRole('button', { name: 'TagComboKing' }).boundingBox())!
+    const nameCenter = name.y + name.height / 2
+    expect(nameCenter).toBeGreaterThan(image.y)
+    expect(nameCenter).toBeLessThan(image.y + image.height)
+  })
+
+  /* A loaded record is taller than a phone. Unbounded, the dialog ran past
+   * both edges and the backdrop scrolled with it, so it read as a page of its
+   * own rather than a popup. It has to stay inside the screen with the page
+   * still showing around it, and scroll its own body instead. */
+  test('the player record stays a popup inside the phone screen', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'Desktop has the height; the cramped case is the phone.')
+    // Routed here: mockAllApis leaves player history to whatever the dev
+    // server proxies to, which is production.
+    await page.route('**/api/history/players/**', (route) => route.fulfill({
+      contentType: 'application/json',
+      body: JSON.stringify({
+        npid: 'u001',
+        days_active: 25,
+        times_seen: 547,
+        first_seen: '2026-08-16T00:00:00Z',
+        last_seen: '2026-09-14T00:00:00Z',
+        room_type_counts: {},
+        top_played_with: [
+          { npid: 'u002', online_name: 'KingOfIronFist', times_together: 126 },
+          { npid: 'u003', online_name: 'TagComboKing', times_together: 117 },
+          { npid: 'u004', online_name: 'BearPunchPro', times_together: 64 },
+          { npid: 'u005', online_name: 'NewChallenger', times_together: 53 },
+        ],
+        active_hours: [0, 1, 22, 23],
+      }),
+    }))
+
+    await page.getByRole('button', { name: 'TTT2_Master' }).click()
+    const dialog = page.getByRole('dialog').filter({ has: page.getByRole('button', { name: '플레이어 기록 닫기' }) })
+    await expect(dialog.getByRole('heading', { name: '자주 함께한 플레이어' })).toBeVisible()
+
+    const box = (await dialog.boundingBox())!
+    const viewport = page.viewportSize()!
+    expect(box.y).toBeGreaterThanOrEqual(16)
+    expect(box.y + box.height).toBeLessThanOrEqual(viewport.height - 16)
+  })
+
   test('no rooms shows empty message', async ({ page }) => {
     await mockAllApis(page, { rooms: { rank_match: [], player_match: [] } })
-    // A fresh load re-opens the patch-notes dialog, which would swallow the tab
-    // click; the beforeEach dismissal does not carry across this second goto.
     await page.goto('/')
-    await dismissPatchNotes(page)
     await goToMatchTab(page)
 
     await expect(page.getByText(/방이 없습니다/)).toBeVisible()

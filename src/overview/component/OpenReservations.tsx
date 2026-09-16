@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { ArrowRight, Clock3, Users } from 'lucide-react'
 import { pathOf, reservationPath } from '@/config/routes'
 import type { ApiReservation } from '@/reservation/reservationApi'
-import { isJoinable, kstTimeFormat, MATCH_TYPE_LABELS } from '@/reservation/reservationLabels'
+import { isJoinable, kstDayLabel, kstTimeFormat, MATCH_TYPE_LABELS } from '@/reservation/reservationLabels'
 import RankSummary from '@/reservation/component/RankSummary'
 
 /** The soonest few, and how many it could not fit.
@@ -19,7 +19,10 @@ import RankSummary from '@/reservation/component/RankSummary'
  * and is given three, so there is no total to contradict — a "latest" list is
  * a slice by definition and nothing on the page claims otherwise.
  */
-export default function OpenReservations({ reservations, limit = 3 }: { reservations: ApiReservation[]; limit?: number }) {
+// Two, matching OVERVIEW_POSTS in the card beside it: the pair share a grid
+// row, so a third here sets the height of both. Nothing is dropped -- the
+// remainder row below says how many are left and leads to them.
+export default function OpenReservations({ reservations, limit = 2 }: { reservations: ApiReservation[]; limit?: number }) {
   const joinable = reservations.filter(isJoinable)
   const shown = joinable.slice(0, limit)
   // Two lines, the shape panelStatus already uses: the terse uppercase label
@@ -35,13 +38,16 @@ export default function OpenReservations({ reservations, limit = 3 }: { reservat
   )
 
   const hidden = joinable.length - shown.length
+  // Which day, not just which hour: the listing runs to the next morning, so
+  // a bare time cannot tell tonight's 23:00 from the 01:00 after it.
+  const now = new Date()
 
   return (
     <ul className="overview-list">
       {shown.map((r) => (
         <li key={r.id}>
           <Link className="overview-list-row overview-list-link" to={reservationPath(r.id)}>
-            <span className="overview-time"><Clock3 size={11} aria-hidden="true" />{kstTimeFormat.format(new Date(r.start_at))}</span>
+            <span className="overview-time"><Clock3 size={11} aria-hidden="true" />{kstDayLabel(new Date(r.start_at), now)} {kstTimeFormat.format(new Date(r.start_at))}</span>
             <div className="overview-list-main">
               <span className="overview-list-title">{r.host_display_name}</span>
               <span className="overview-list-sub">{MATCH_TYPE_LABELS[r.match_type]}</span>

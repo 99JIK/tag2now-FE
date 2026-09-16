@@ -84,6 +84,11 @@
 .activity-timeline-cells { display: grid; grid-template-columns: repeat(24,minmax(2px,1fr)); gap: 2px; height: 42px; align-items: end; padding: 6px 6px; border: 1px solid var(--color-border); border-radius: 6px; background: color-mix(in srgb, var(--color-shade) 10%, transparent); }
 .activity-timeline-cells span { height: 8px; border-radius: 6px; background: color-mix(in srgb, var(--color-surface-tint) 6%, transparent); }
 .activity-timeline-cells span.is-active { height: 26px; background: var(--color-primary); }
+/* The strip runs from the day boundary, not from 00:00, so midnight falls
+   inside it rather than at an edge --- without a mark the cells after it
+   read as the same day. */
+.activity-timeline-cells span.starts-next-day { position: relative; }
+.activity-timeline-cells span.starts-next-day::before { content: ''; position: absolute; left: -2px; top: -6px; bottom: -6px; width: 1px; background: var(--color-border); }
 .activity-timeline-labels { display: flex; justify-content: space-between; margin-top: 4px; color: var(--color-txt-faint); font-size: var(--text-4xs); font-weight: var(--weight-row); font-variant-numeric: tabular-nums; }
 .history-empty { display: grid; min-height: 172px; place-items: center; color: var(--color-txt-dim); font-size: var(--text-2xs); text-align: center; }
 .history-state { margin: 16px; }

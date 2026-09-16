@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { dismissPatchNotes, mockAllApis, reservationAt } from '../helpers/mock-api'
+import { mockAllApis, reservationAt, skipPatchNotes } from '../helpers/mock-api'
 
 test('shows the completed reservation roster in the detail panel', async ({ page }) => {
   const reservation = {
@@ -7,8 +7,8 @@ test('shows the completed reservation roster in the detail panel', async ({ page
     participants: [{ id: 1, display_name: 'TTT2_Master' }, { id: 2, display_name: 'KingOfIronFist' }],
   }
   await mockAllApis(page, { reservations: [reservation] })
+  await skipPatchNotes(page)
   await page.goto('/reservation/1')
-  await dismissPatchNotes(page)
   const detail = page.getByRole('complementary', { name: '선택한 예약 상세' })
   const roster = detail.getByRole('region', { name: '참가자 명단' })
   await roster.scrollIntoViewIfNeeded()

@@ -114,9 +114,12 @@ data the page already holds.
 
 `useOverview` batches those four with `Promise.allSettled`, and a rejected
 source degrades to an empty list. One failing endpoint therefore costs its own
-card, not the page. It polls with a `null` interval — a snapshot with a manual
-refresh, since only the room figures are genuinely live and those stay fresh
-through App's poll.
+card, not the page. It polls with a `null` interval — a snapshot, since only
+the room figures are genuinely live and those stay fresh through App's poll.
+There is no refresh button: the route remounts when the reader leaves the tab
+and comes back, which refetches, and the error state keeps its own retry. The
+panel's h2 is `sr-only` — it holds the heading outline together (h1 → h2 →
+the cards' h3) without spending a toolbar's height above the figures.
 
 **Two joins worth knowing:**
 
@@ -192,6 +195,16 @@ Match-type labels and the KST time format live in `reservationLabels.ts`, not
 `reservationApi.ts`: the overview needs them too, and `Reservation.test.tsx`
 replaces the whole API module with a mock, so anything the UI reads at import
 time has to sit outside it.
+
+The booking window — at least ten minutes out, before the next 06:00 KST — is
+the backend's rule, mirrored in `bookingWindow.ts` so the form can refuse a
+start instead of submitting it. Its constants are copies of `LEAD_TIME` and
+`DAY_END_HOUR` in tag2now-BE's `reservation/domain.py`: change both together.
+The server still rejects whatever a stale copy lets through.
+
+The list groups and sorts by `start_at`, not the `HH:MM` it displays, and labels
+each start 어제/오늘/내일 (`kstDayLabel`). A time alone is ambiguous here: the
+window crosses midnight, so "01:00" can follow "23:00".
 
 ### Error handling
 
@@ -272,10 +285,18 @@ Component tests are prop-driven and need no mocks. `App.test.tsx` mocks the feat
 - `e2e/visual/screenshots.spec.ts` — visual regression, **local only**; CI does not run it.
 
 Helpers worth reaching for: `goToMatchTab` (the overview is the landing tab, so
-a rooms spec can click through or `goto('/match/rank_match')`),
-`dismissPatchNotes` (closes the dialog), and `skipPatchNotes` (marks it seen
-before load, for specs that cannot afford the paint at all — it reads
-`LATEST_PATCH_VERSION` so a version bump cannot silently stop suppressing it).
+a rooms spec can click through or `goto('/match/rank_match')`) and
+`skipPatchNotes`, which every spec calls **before its first navigation** — it
+seeds the seen marker from `LATEST_PATCH_VERSION`, so a version bump cannot
+silently stop suppressing the dialog.
+
+`skipPatchNotes` registers an init script, so one call in a `beforeEach` holds
+for every later `goto` and `reload` in that test. Do not repeat it per
+navigation. `dismissPatchNotes` clicks the dialog's X instead, and the X writes
+nothing — so it has to run again after every navigation, and a spec that
+forgets leaves the modal covering whatever it asserts next. It is now used only
+by `e2e/specs/patch-notes.spec.ts`, which is the one place the dialog itself is
+under test; nothing else should reach for it.
 
 **Do not wait out a poll in real time.** Install `page.clock` before the first
 navigation and use `fastForward`, not `runFor`: `runFor` replays every timer

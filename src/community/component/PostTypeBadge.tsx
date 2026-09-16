@@ -1,6 +1,8 @@
 import { charImageUrl } from '@/shared/characterImage'
 import { DEFAULT_POST_TYPE, POST_TYPES } from '@/community/types'
 
+type BadgeSize = 'sm' | 'md'
+
 interface PostTypeBadgeProps {
   postType: string
   /** The characters the post is about — up to two. */

@@ -54,8 +54,9 @@ export default function TopFiveList({ rows, detailLabel, emptyMsg = '데이터 �
                   aiming at the portrait or the match count opens the same
                   player the name does. The label is a span of its own because
                   the ellipsis needs `overflow: hidden`, and that would clip
-                  the very overlay that does the stretching. */}
-              <button type="button" className="player-btn overview-rank-btn" onClick={() => onSelect(row.npid)}>
+                  the very overlay that does the stretching. The title carries
+                  the whole name to a pointer once the ellipsis has cut it. */}
+              <button type="button" className="player-btn overview-rank-btn" onClick={() => onSelect(row.npid)} title={row.name}>
                 <span className="overview-rank-btn-label">{row.name}</span>
               </button>
               {row.detail && (

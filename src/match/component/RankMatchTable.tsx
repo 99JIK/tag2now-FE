@@ -77,8 +77,8 @@ export default memo(function RankMatchTable({ rooms, leaderboardEntries }: RankM
                     </span>
                   </th>
                 </tr>
-                {inGame.map((r,i) => (
-                  <tr key={i} className="tbl-row" style={rowAccentStyle}>
+                {inGame.map((r) => (
+                  <tr key={r.room_id} className="tbl-row" style={rowAccentStyle}>
                     <td className="tbl-td">
                       <RankImage rankInfo={r.rank_info} className="rank-art" />
                     </td>

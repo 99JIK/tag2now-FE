@@ -7,9 +7,10 @@ export interface CharCellProps {
   rankInfo?: CharRankInfo
   wins?: number
   losses?: number
+  compact?: boolean
 }
 
-export default function CharCell({ name, rankInfo, wins, losses }: CharCellProps) {
+export default function CharCell({ name, rankInfo, wins, losses, compact = false }: CharCellProps) {
   if (!name) return <div className="char-td" aria-label="캐릭터 없음">—</div>
   const url = charImageUrl(name)
   const total = (wins ?? 0) + (losses ?? 0)

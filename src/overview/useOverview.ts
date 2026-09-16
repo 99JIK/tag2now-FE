@@ -8,7 +8,9 @@ import type { OverviewData } from '@/overview/types'
 
 export const OVERVIEW_DAYS = 7
 export const OVERVIEW_TOP_N = 5
-export const OVERVIEW_POSTS = 3
+// Two, as the reservation card beside it: the pair share a grid row, so the
+// taller one sets its height and a third item in either costs the whole row.
+export const OVERVIEW_POSTS = 2
 
 /** One settled batch rather than four independent states.
  *
@@ -38,8 +40,9 @@ function settledOr<T>(result: PromiseSettledResult<unknown>, fallback: T): T {
   return result.status === 'fulfilled' ? (result.value as T) : fallback
 }
 
-/** No interval: the overview is a snapshot with a manual refresh. Rooms — the
- * only genuinely live figure on the page — stays fresh through App's own poll.
+/** No interval: the overview is a snapshot, fetched each time its route mounts,
+ * so leaving the tab and coming back refreshes it. Rooms — the only genuinely
+ * live figure on the page — stays fresh through App's own poll.
  */
 export default function useOverview(): PolledState<OverviewData> {
   return usePolledData(fetchOverview, POLL.overview)

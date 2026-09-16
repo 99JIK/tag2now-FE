@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { mockAllApis, dismissPatchNotes } from '../helpers/mock-api'
+import { mockAllApis, skipPatchNotes } from '../helpers/mock-api'
 
 test.describe('Community', () => {
   test.beforeEach(async ({ page }) => {
     await mockAllApis(page)
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.locator('button.tab-btn', { hasText: '커뮤니티' }).click()
   })
 
@@ -28,6 +28,15 @@ test.describe('Community', () => {
     )
     await page.locator('button', { hasText: '자유' }).click()
     await requestPromise
+  })
+
+  test('picking two characters filters by that team', async ({ page }) => {
+    await page.getByRole('button', { name: 'Filter by Jin', exact: true }).click()
+    const requestPromise = page.waitForRequest((req) =>
+      req.url().includes('/api/community/posts') && new URL(req.url()).searchParams.getAll('characters').length === 2
+    )
+    await page.getByRole('button', { name: 'Filter by Kazuya', exact: true }).click()
+    expect(new URL((await requestPromise).url()).searchParams.getAll('characters')).toEqual(['Jin', 'Kazuya'])
   })
 
   test('clicking a post opens detail view', async ({ page }) => {

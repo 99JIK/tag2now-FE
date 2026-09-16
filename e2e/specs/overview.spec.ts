@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { mockAllApis, dismissPatchNotes, reservationAt } from '../helpers/mock-api'
+import { mockAllApis, reservationAt, skipPatchNotes } from '../helpers/mock-api'
 
 // The overview is a summary, so what is worth asserting is that each card
 // reflects its own source and that the links out actually change tabs — not the
@@ -12,8 +12,8 @@ test.describe('Overview', () => {
         reservationAt(21, { id: 2, host_display_name: '자리없음호스트', capacity: 2, participant_count: 2 }),
       ],
     })
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
   })
 
   test("shows live room figures alongside today's unique players", async ({ page }) => {
@@ -56,6 +56,42 @@ test.describe('Overview', () => {
     await expect(unranked.locator('.mini-char.is-empty')).toHaveCount(2)
   })
 
+  test('keeps weekly player names clear of match counts with compact character art', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'The mobile overview places the name and match count on their own row.')
+    const top = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-row').first()
+    const nameBox = await top.locator('.overview-rank-name').boundingBox()
+    const nameLabel = top.locator('.overview-rank-btn-label')
+    const detailBox = await top.locator('.overview-rank-detail').boundingBox()
+    const detailTextBox = await top.locator('.overview-rank-detail').evaluate(element => {
+      const range = document.createRange()
+      range.selectNodeContents(element)
+      const rect = range.getBoundingClientRect()
+      return { x: rect.x, width: rect.width, lines: range.getClientRects().length }
+    })
+    const rankBox = await top.locator('.mini-char-rank').first().boundingBox()
+    const portraitBox = await top.locator('.mini-char-portrait').first().boundingBox()
+
+    expect(nameBox).not.toBeNull()
+    expect(detailBox).not.toBeNull()
+    expect(rankBox).not.toBeNull()
+    expect(portraitBox).not.toBeNull()
+    expect(nameBox!.x + nameBox!.width).toBeLessThanOrEqual(detailBox!.x)
+    expect(rankBox!.x - (detailTextBox.x + detailTextBox.width)).toBeGreaterThanOrEqual(10)
+    // Three-digit weekly counts are routine (the fixture's top player has 132),
+    // and a column too narrow for them broke "132판" across two lines — which
+    // the gap check above still passes, since it measures the wrapped box.
+    expect(detailTextBox.lines).toBe(1)
+    // The markup keeps the whole name; CSS shortens it with an ellipsis only
+    // when the column runs out, and the label never spills into the count.
+    const labelBox = await nameLabel.boundingBox()
+    expect(labelBox).not.toBeNull()
+    expect(labelBox!.x + labelBox!.width).toBeLessThanOrEqual(detailBox!.x)
+    await expect(nameLabel).toHaveText('TagComboKing')
+    expect(rankBox!.width).toBeLessThanOrEqual(54.72)
+    expect(portraitBox!.width).toBeCloseTo(36, 1)
+    expect(portraitBox!.height).toBeCloseTo(36, 1)
+  })
+
   test('omits a reservation nobody can still join', async ({ page }) => {
     await expect(page.getByText('모집중호스트')).toBeVisible()
     await expect(page.getByText('자리없음호스트')).toHaveCount(0)
@@ -95,7 +131,7 @@ test.describe('Overview', () => {
     await expect(nav.getByRole('tab', { name: /^예약/ })).toHaveAttribute('aria-selected', 'true')
   })
 
-  // The rank rows used to offer only the name — 61px of text in a 66px row,
+  // The rank rows used to offer only the name — 61px of text across a row,
   // with the portraits and the match count beside it describing that same
   // player. A raw coordinate click is the point of this one: whether a pixel
   // out at the row's edge opens anything is a hit test, and the unit suite has
@@ -104,7 +140,8 @@ test.describe('Overview', () => {
     const top = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-row').first()
 
     // Bottom-left of the row: the position number's column, nowhere near the
-    // name, and inside the row in both the desktop and the wrapped layout.
+    // name. Measured rather than fixed, so it stays inside the row in both the
+    // desktop and the wrapped layout whatever height either settles on.
     // Clicked through the row rather than at page coordinates so Playwright
     // scrolls it into view first, and so its hit test still has to pass.
     // The offset is measured rather than fixed — a hard 60px fell outside the
@@ -134,7 +171,6 @@ test.describe('Overview', () => {
   // to open on the post itself, cold, with no click path behind it.
   test('a post link opens the post directly', async ({ page }) => {
     await page.goto('/community/1')
-    await dismissPatchNotes(page)
 
     await expect(page.getByRole('button', { name: /목록/ })).toBeVisible()
     const nav = page.getByRole('tablist', { name: 'Main navigation' })
@@ -148,18 +184,17 @@ test.describe('Overview', () => {
     await page.goBack()
 
     await expect(page).toHaveURL(/\/$/)
-    await expect(page.getByRole('heading', { name: '한눈에 보기' })).toBeVisible()
+    await expect(page.getByRole('region', { name: '모집 중인 예약' })).toBeVisible()
   })
 
   test('a failing source costs only its own card', async ({ page }) => {
     await page.unrouteAll({ behavior: 'ignoreErrors' })
     await mockAllApis(page, { failEndpoints: ['history'] })
     await page.goto('/')
-    await dismissPatchNotes(page)
 
     // The history endpoints are down, but rooms still are not: the KPI row and
     // the reservation card have to survive their neighbour failing.
-    await expect(page.getByRole('heading', { name: '한눈에 보기' })).toBeVisible()
+    await expect(page.getByRole('region', { name: '모집 중인 예약' })).toBeVisible()
     await expect(page.getByRole('region', { name: '주간 철악귀' })).toContainText('주간 기록 없음')
   })
 })

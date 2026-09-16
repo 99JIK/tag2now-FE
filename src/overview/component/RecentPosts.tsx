@@ -21,7 +21,7 @@ export default function RecentPosts({ posts }: { posts: PostSummary[] }) {
               describes the one post, so a reader aiming at the comment count
               still means "open this". */}
           <Link className="overview-list-row overview-list-link" to={postPath(post.id)}>
-            <PostTypeBadge postType={post.post_type} />
+            <PostTypeBadge postType={post.post_type} characters={post.characters} />
             <div className="overview-list-main">
               <span className="overview-list-title">{post.title}</span>
               <span className="overview-list-sub">{post.author} · {formatTimeAgo(post.created_at)}</span>

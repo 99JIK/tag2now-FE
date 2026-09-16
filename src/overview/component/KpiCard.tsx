@@ -30,7 +30,7 @@ export default function KpiCard({ icon: Icon, label, value, hint, live, linkLabe
     // aiming at the value or the hint still means "show me this".
     <Link className="kpi-card" to={to}>
       <div className="kpi-card-head">
-        <span className="kpi-card-icon"><Icon size={20} aria-hidden="true" /></span>
+        <span className="kpi-card-icon"><Icon size={16} aria-hidden="true" /></span>
         <span className="kpi-card-label">{label}</span>
         {/* role="img": the bars are one graphic carrying one meaning, and
             aria-label is only valid on an element that has a role to label. */}

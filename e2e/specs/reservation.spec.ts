@@ -1,5 +1,5 @@
 import { test, expect, type Locator } from '@playwright/test'
-import { dismissPatchNotes, mockAllApis, reservationAt, signInAs } from '../helpers/mock-api'
+import { mockAllApis, reservationAt, signInAs, skipPatchNotes } from '../helpers/mock-api'
 
 /** Nothing is preselected, so a rank match stays unsubmittable until a rank is
  * picked — every flow that posts one goes through here. */
@@ -10,17 +10,23 @@ async function pickRank(modal: Locator, rank = 'Vanquisher') {
   await picker.getByRole('button', { name: '선택 완료' }).click()
 }
 
+/** Phones show the detail in place of the list, so a card check made after
+ * acting on the detail has to step back to the list first. */
+async function showList(page: import('@playwright/test').Page, isMobile: boolean) {
+  if (isMobile) await page.getByRole('button', { name: '목록으로' }).click()
+}
+
 test.describe('Reservation', () => {
   test.beforeEach(async ({ page }) => {
-    // The default start time is the next whole hour in Seoul, so pin the clock
-    // to 20:10 KST and the form opens on a predictable 21:00.
+    // The default start time follows the clock, so pin it to 20:10 KST and the
+    // form opens on a predictable 21:00 today.
     await page.clock.install({ time: new Date('2026-08-28T11:10:00Z') })
     await page.clock.runFor(0)
     await signInAs(page, '나')
     await mockAllApis(page)
     await page.addInitScript(() => localStorage.setItem('ttt2-username', '나'))
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
   })
 
@@ -37,7 +43,7 @@ test.describe('Reservation', () => {
     await page.keyboard.press('ArrowDown')
     await page.waitForTimeout(500)
     await page.getByRole('dialog', { name: '시간 선택' }).getByRole('button', { name: '선택 완료' }).click()
-    await expect(timeButton).toHaveAttribute('aria-label', '시작 시각 22:00')
+    await expect(timeButton).toHaveAttribute('aria-label', '시작 시각 오늘 22:00')
 
     await modal.getByRole('button', { name: '계급 선택' }).click()
     const rankPicker = page.locator('#reservation-rank-picker')
@@ -55,6 +61,30 @@ test.describe('Reservation', () => {
     await expect(createdCard.getByRole('img', { name: 'Vanquisher' })).toBeVisible()
   })
 
+  // With many reservations the stacked detail sat below every card, so phones
+  // show the list and the detail one at a time, keyed by the path.
+  test('phones open a reservation as its own page and return to the list', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'Desktop shows the list and the detail side by side.')
+    await mockAllApis(page, {
+      reservations: [reservationAt(21, { id: 7, host_display_name: '온프' }), reservationAt(22, { id: 8, host_display_name: '둘째' })],
+    })
+    await page.goto('/reservation')
+    const detail = page.getByRole('complementary', { name: '선택한 예약 상세' })
+    const card = page.getByRole('button', { name: /온프/ })
+    await expect(card).toBeVisible()
+    await expect(detail).toBeHidden()
+
+    await card.click()
+    await expect(page).toHaveURL(/\/reservation\/7$/)
+    await expect(detail).toBeVisible()
+    await expect(card).toBeHidden()
+
+    await detail.getByRole('button', { name: '목록으로' }).click()
+    await expect(page).toHaveURL(/\/reservation$/)
+    await expect(card).toBeVisible()
+    await expect(detail).toBeHidden()
+  })
+
   /** `toBeVisible` is not enough here: it asks whether the element has a box and
    * is not hidden, and an element clipped away by an ancestor's `overflow: hidden`
    * passes that while being invisible on screen. The badge used to sit outside the
@@ -64,7 +94,6 @@ test.describe('Reservation', () => {
       reservations: [reservationAt(21, { id: 7, host_display_name: '온프', host_ranks: ['Yaksa', 'Fujin', 'Warrior', 'Vanquisher', 'Mentor'] })],
     })
     await page.reload()
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
 
     const card = page.getByRole('button', { name: /온프/ })
@@ -93,7 +122,6 @@ test.describe('Reservation', () => {
       })
     })
     await page.reload()
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
 
     // A failed list load is a state of the list, not of the whole tab: the
@@ -176,10 +204,14 @@ test.describe('Reservation deletion', () => {
   const someoneElse = reservationAt(21, { id: 10, host_display_name: '상대', host_ranks: ['Yaksa'] })
 
   async function openReservationTab(page: import('@playwright/test').Page, reservations = [someoneElse]) {
+    // The form refuses a start outside the booking window, so on the real clock
+    // these would fail in the ten minutes before 06:00 KST. 20:10 KST, as above.
+    await page.clock.install({ time: new Date('2026-08-28T11:10:00Z') })
+    await page.clock.runFor(0)
     await signInAs(page, '나')
     await mockAllApis(page, { reservations })
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
   }
 
@@ -213,7 +245,7 @@ test.describe('Reservation deletion', () => {
     await expect(page.getByRole('status')).toHaveText('예약을 삭제했습니다.')
   })
 
-  test('dismissing the confirmation keeps the reservation', async ({ page }) => {
+  test('dismissing the confirmation keeps the reservation', async ({ page, isMobile }) => {
     await openReservationTab(page, [])
     const detail = await createReservation(page)
 
@@ -222,6 +254,7 @@ test.describe('Reservation deletion', () => {
       .getByRole('button', { name: '취소' }).click()
 
     await expect(page.getByRole('alertdialog')).toHaveCount(0)
+    await showList(page, isMobile)
     await expect(page.getByRole('button', { name: /나 모집중/ })).toBeVisible()
   })
 
@@ -239,10 +272,14 @@ test.describe('Reservation editing', () => {
   const someoneElse = reservationAt(21, { id: 10, host_display_name: '상대', host_ranks: ['Yaksa'] })
 
   async function openReservationTab(page: import('@playwright/test').Page, reservations = [someoneElse]) {
+    // Pinned for the same reason as the deletion specs: the form checks the
+    // start against the clock, and the real one reaches 05:50 KST once a day.
+    await page.clock.install({ time: new Date('2026-08-28T11:10:00Z') })
+    await page.clock.runFor(0)
     await signInAs(page, '나')
     await mockAllApis(page, { reservations })
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
   }
 
@@ -250,9 +287,8 @@ test.describe('Reservation editing', () => {
     await page.getByRole('button', { name: '+ 예약 추가' }).click()
     const modal = page.getByRole('dialog', { name: '예약 추가' })
     await pickRank(modal)
-    // This describe runs on the real clock, so the form opens on whatever the
-    // next whole hour happens to be. What the editor owes us is that time back,
-    // not a fixed one — carry it out rather than hard-coding it.
+    // What the editor owes us is the time the form posted — carry it out
+    // rather than restating the default here.
     const postedTime = await modal.getByRole('button', { name: /시작 시각/ }).getAttribute('aria-label')
     await modal.getByRole('button', { name: '예약 등록' }).click()
     await page.getByRole('button', { name: /나 모집중/ }).click()
@@ -296,7 +332,6 @@ test.describe('Reservation editing', () => {
     await openReservationTab(page, [taken])
     await page.evaluate(() => localStorage.setItem('reservation-owner-11', 'owner-11'))
     await page.reload()
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
     await page.getByRole('button', { name: /나 모집중/ }).click()
     const detail = page.getByRole('complementary', { name: '선택한 예약 상세' })
@@ -329,24 +364,25 @@ test.describe('Reservation participation', () => {
   async function openReservationTab(page: import('@playwright/test').Page, reservations = [openRankMatch]) {
     await signInAs(page, '나')
     await mockAllApis(page, { reservations })
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
     await page.getByRole('button', { name: /상대/ }).click()
     return page.getByRole('complementary', { name: '선택한 예약 상세' })
   }
 
-  test('joining a rank match settles it and offers to cancel', async ({ page }) => {
+  test('joining a rank match settles it and offers to cancel', async ({ page, isMobile }) => {
     const detail = await openReservationTab(page)
 
     await detail.getByRole('button', { name: '참가하기' }).click()
 
     await expect(page.getByRole('status')).toHaveText(/매칭이 성사되었습니다/)
     await expect(detail.getByRole('button', { name: '참가 취소' })).toBeVisible()
+    await showList(page, isMobile)
     await expect(page.getByRole('button', { name: /상대 모집 완료/ })).toBeVisible()
   })
 
-  test('cancelling a participation puts the reservation back up for grabs', async ({ page }) => {
+  test('cancelling a participation puts the reservation back up for grabs', async ({ page, isMobile }) => {
     const detail = await openReservationTab(page)
     await detail.getByRole('button', { name: '참가하기' }).click()
     await expect(detail.getByRole('button', { name: '참가 취소' })).toBeVisible()
@@ -355,10 +391,11 @@ test.describe('Reservation participation', () => {
 
     await expect(page.getByRole('status')).toHaveText(/다시 모집중으로 전환되었습니다/)
     await expect(detail.getByRole('button', { name: '참가하기' })).toBeVisible()
+    await showList(page, isMobile)
     await expect(page.getByRole('button', { name: /상대 모집중/ })).toBeVisible()
   })
 
-  test('a player match stays open until every slot is taken', async ({ page }) => {
+  test('a player match stays open until every slot is taken', async ({ page, isMobile }) => {
     const detail = await openReservationTab(page, [
       reservationAt(21, { id: 10, match_type: 'player_match', capacity: 2, host_ranks: [] }),
     ])
@@ -366,6 +403,7 @@ test.describe('Reservation participation', () => {
     await detail.getByRole('button', { name: '참가하기' }).click()
 
     await expect(page.getByRole('status')).toHaveText(/다른 참가자를 기다리고 있어요/)
+    await showList(page, isMobile)
     await expect(page.getByRole('button', { name: /상대 1\/2명/ })).toBeVisible()
   })
 
@@ -383,7 +421,6 @@ test.describe('Reservation participation', () => {
     await expect(detail.getByRole('button', { name: '참가 취소' })).toBeVisible()
 
     await page.reload()
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
     await page.getByRole('button', { name: /상대/ }).click()
 

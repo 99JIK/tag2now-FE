@@ -13,26 +13,37 @@ function sectorPath(hour: number, cx: number, cy: number, innerRadius: number, o
   return `M${x1} ${y1} L${x2} ${y2} A${outerRadius} ${outerRadius} 0 0 1 ${x3} ${y3} L${x4} ${y4} A${innerRadius} ${innerRadius} 0 0 0 ${x1} ${y1}Z`
 }
 
+/** The statistics day starts at 06:00 KST, so the linear strip below the ring
+ *  reads from there: a 22-02 session is one block at the right-hand end
+ *  instead of two stubs pinned to opposite edges. */
+const STAT_DAY_START_HOUR = 6
+const STRIP_HOURS = Array.from({ length: 24 }, (_, offset) => (STAT_DAY_START_HOUR + offset) % 24)
+
+/** The longest unbroken run of active hours, measured around the clock.
+ *  A late-night player is active 22–03, one run through midnight --- reading
+ *  the hours as a flat 0–23 line would report it as two and show the shorter. */
 function getActivityWindow(hours: number[]) {
-  const sorted = [...new Set(hours)].filter((hour) => hour >= 0 && hour < 24).sort((a, b) => a - b)
-  if (sorted.length === 0) return { label: '기록 없음', count: 0 }
+  const active = new Set(hours.filter((hour) => Number.isInteger(hour) && hour >= 0 && hour < 24))
+  if (active.size === 0) return { label: '기록 없음', count: 0 }
+  if (active.size === 24) return { label: '00:00–24:00', count: 24 }
 
-  let bestStart = sorted[0]
-  let bestEnd = sorted[0]
-  let currentStart = sorted[0]
-
-  for (let index = 1; index < sorted.length; index += 1) {
-    if (sorted[index] !== sorted[index - 1] + 1) currentStart = sorted[index]
-    if (sorted[index] - currentStart > bestEnd - bestStart) {
-      bestStart = currentStart
-      bestEnd = sorted[index]
+  // Start where a run can start: an active hour whose predecessor is not.
+  const startsARun = (hour: number) => active.has(hour) && !active.has((hour + 23) % 24)
+  let bestStart = 0
+  let bestLength = 0
+  for (const start of Array.from(active).filter(startsARun)) {
+    let length = 1
+    while (active.has((start + length) % 24)) length += 1
+    if (length > bestLength) {
+      bestStart = start
+      bestLength = length
     }
   }
 
-  const endHour = (bestEnd + 1) % 24
+  const endHour = (bestStart + bestLength) % 24
   return {
     label: `${String(bestStart).padStart(2, '0')}:00–${String(endHour).padStart(2, '0')}:00`,
-    count: sorted.length,
+    count: active.size,
   }
 }
 
@@ -87,14 +98,18 @@ export default function ActiveHoursClock({ hours }: { hours: number[] }) {
           <span><i aria-hidden="true" /> ACTIVE WINDOW</span>
           <strong>{insight.count}<small> / 24시간</small></strong>
         </div>
-        <div className="activity-timeline" aria-label="시간대별 활동 분포">
+        <div className="activity-timeline" aria-label="시간대별 활동 분포 (06시 기준)">
           <div className="activity-timeline-cells">
-            {Array.from({ length: 24 }, (_, hour) => (
-              <span key={hour} className={active.has(hour) ? 'is-active' : ''} title={`${hour}:00`} />
+            {STRIP_HOURS.map((hour) => (
+              <span
+                key={hour}
+                className={`${active.has(hour) ? 'is-active' : ''}${hour === 0 ? ' starts-next-day' : ''}`}
+                title={`${String(hour).padStart(2, '0')}:00`}
+              />
             ))}
           </div>
           <div className="activity-timeline-labels" aria-hidden="true">
-            <span>00</span><span>06</span><span>12</span><span>18</span><span>24</span>
+            <span>06</span><span>12</span><span>18</span><span>00</span><span>06</span>
           </div>
         </div>
       </div>
