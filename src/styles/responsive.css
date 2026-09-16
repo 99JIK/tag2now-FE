@@ -173,9 +173,13 @@
   .match-table .player-btn { display: block; width: 100%; overflow: hidden; padding-inline: 4px; text-overflow: ellipsis; white-space: nowrap; }
   .match-table .vs-label { font-size: var(--text-xs); }
   .ranking-table .player-btn { width: 100%; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { width: 11%; }
-  .leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { width: 33%; }
-  .leaderboard-table th:nth-child(3), .leaderboard-table td:nth-child(3), .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { width: 28%; }
+  /* The name gets the width back. At 393px it was 112px against 95px for each
+     character cell, and 62 of those 95 were a rank banner --- so "Daddyking_"
+     truncated to "Daddyk..." while the art beside it had room to spare. The
+     name is what a reader scans a leaderboard for. */
+  .leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { width: 10%; }
+  .leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { width: 42%; }
+  .leaderboard-table th:nth-child(3), .leaderboard-table td:nth-child(3), .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { width: 24%; }
   .weekly-ranking-table th:nth-child(1), .weekly-ranking-table td:nth-child(1) { width: 13%; }
   .weekly-ranking-table th:nth-child(2), .weekly-ranking-table td:nth-child(2) { width: 35%; }
   .weekly-ranking-table th:nth-child(3), .weekly-ranking-table td:nth-child(3) { width: 16%; }
@@ -191,13 +195,22 @@
      in each character's cell, and the sort controls stay reachable. */
   .lb-total-col { display: none; }
   .lb-picker { padding: 6px; }
+  /* One scrolling row, not two wrapped ones: eight bands wrapped cost 48px of
+     a 851px screen, and 334px of filters already sat above the first result.
+     The scrollbar is hidden --- the row's own overflow is the affordance, the
+     way the match tab's group strip already works. */
+  .lb-tiers { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .lb-tiers::-webkit-scrollbar { display: none; }
+  .lb-tier { flex: 0 0 auto; min-width: 0; padding: 0 9px; }
   .lb-sort button { padding: 0 8px; }
   .char-cell { gap: 6px; }
   .char-cell-portrait { height: 40px; }
   /* The raw W/L is hidden below, so the block only has to hold the banner and
      the win rate. */
-  .char-cell { width: min(100%, 104px); gap: 6px; }
-  .char-cell-rank { height: 24px; }
+  .char-cell { width: min(100%, 104px); gap: 4px; }
+  /* Sized by height so the banner keeps its shape, and capped so it cannot take
+     the cell back off the name. */
+  .char-cell-rank { width: auto; max-width: 48px; height: auto; max-height: 22px; object-fit: contain; }
   .ranking-table .char-td img { max-width: 100%; object-fit: contain; }
   /* A margin of page stays visible around the dialog, so it reads as a popup
      rather than a screen of its own. */
