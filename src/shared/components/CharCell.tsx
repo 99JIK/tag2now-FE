@@ -23,21 +23,18 @@ export default function CharCell({ name, rankInfo, wins, losses, compact = false
       {url && <img src={url} alt={name} className="char-art char-cell-portrait" />}
       <div className="char-cell-meta char-cell-content">
         <RankImage rankInfo={rankInfo} className="char-cell-rank" />
+        {/* The rate leads and the raw record rides behind it, in both variants.
+            The compact one briefly did the opposite --- "445W 328L" then
+            "WR:58%" --- which put two emphases on one figure within a single
+            screen: the sidebar card led with the record, the leaderboard two
+            clicks away led with the rate. `compact` changes the arrangement,
+            never which number is the point. No "WR:" label either: a bare
+            percentage beside a W/L is not something a reader has to be told
+            the name of. */}
         {winRate != null && (
           <span className="char-cell-record">
-            {/* The compact column leads with the raw record and puts the rate
-                under it; the table cell has room to lead with the rate. */}
-            {compact ? (
-              <>
-                <span className="char-cell-wl">{wins}<span>W</span> {losses}<span>L</span></span>
-                <span className="char-cell-wr">WR:{winRate}%</span>
-              </>
-            ) : (
-              <>
-                <span className="char-cell-wr">{winRate}%</span>
-                <span className="char-cell-wl">{wins}<span>W</span> {losses}<span>L</span></span>
-              </>
-            )}
+            <span className="char-cell-wr">{winRate}%</span>
+            <span className="char-cell-wl">{wins}<span>W</span> {losses}<span>L</span></span>
           </span>
         )}
       </div>

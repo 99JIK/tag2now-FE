@@ -18,6 +18,7 @@ import CharCell from "@/shared/components/CharCell";
 import { MEDAL } from '@/shared/medalColors'
 import type { HourlyActivity, WeeklyTopPlayer } from '@/stat/types'
 import DailyChart from '@/shared/components/DailyChart'
+import { DAY_START_HOUR, hourLabel, orderByDayStart } from '@/shared/dayBoundary'
 import { COLOR_BORDER, COLOR_PRIMARY, COLOR_TXT_DIM, LEGEND_STYLE, SERIES_COLOR, TOOLTIP_STYLE, seriesName, seriesRank } from '@/shared/components/chartTheme'
 import ChartLegend from '@/shared/components/ChartLegend'
 import type {LeaderboardEntry} from "@/shared/types";
@@ -39,12 +40,18 @@ const LIMIT_OPTIONS: { value: WeeklyTopLimit; label: string }[] = [
 function HourlyChart({ data }: { data: HourlyActivity[] }) {
   if (data.length === 0) return <p className="state-msg">데이터 없음</p>
 
+  // Rotated to start at the day boundary rather than at 00:00, so an evening
+  // that runs past midnight is one block at the right-hand end instead of two
+  // stubs pinned to opposite edges. The buckets arrive per hour, so this is a
+  // reordering --- nothing is recomputed.
+  const ordered = orderByDayStart(data, (row) => row.hour)
+
   return (
     <ResponsiveContainer width="100%" height={176}>
       {/* left: 0, not -20. A negative gutter pulls the plot over its own tick
           labels — the same thing that rendered the daily chart's Y axis as a
           column of clipped glyphs. */}
-      <ComposedChart data={data} margin={{ top: 16, right: 8, left: 0, bottom: 0 }} barCategoryGap="20%">
+      <ComposedChart data={ordered} margin={{ top: 16, right: 8, left: 0, bottom: 0 }} barCategoryGap="20%">
         <CartesianGrid vertical={false} stroke={COLOR_BORDER} strokeOpacity={0.8} />
         <XAxis
           dataKey="hour"
@@ -248,12 +255,15 @@ export default function Stats({ leaderboardEntries = [] }: StatsProps) {
             <div className="chart-grid">
               <section aria-labelledby="hourly-heading" className="chart-panel">
                 <h4 id="hourly-heading">
-                  시간대별 접속자 <span className="text-2xs font-medium opacity-60">(KST 06시 ~ 익일 05시)</span>
+                  시간대별 접속자 <span className="text-2xs font-medium opacity-60">(KST {hourLabel(DAY_START_HOUR)}시 ~ 익일 {hourLabel((DAY_START_HOUR + 23) % 24)}시)</span>
                 </h4>
                 <HourlyChart data={hourly} />
               </section>
               <section aria-labelledby="daily-heading" className="chart-panel">
-                <h4 id="daily-heading">일별 접속자 <span className="text-2xs font-medium opacity-60">(06시 기준)</span></h4>
+                {/* 06시, not the 08시 above it: these rows arrive already bucketed by
+                      the backend's statistics day, so the label reports what the
+                      data is rather than what this app would prefer. */}
+                <h4 id="daily-heading">일별 접속자 <span className="text-2xs font-medium opacity-60">(서버 집계 기준 06시)</span></h4>
                 <DailyChart data={daily} />
               </section>
             </div>

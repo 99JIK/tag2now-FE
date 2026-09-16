@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
-import { Check, Pencil, Radio, Trophy, UserRound, X } from 'lucide-react'
+import { Check, Radio, Trophy, UserRound, X } from 'lucide-react'
 import { setIdentity } from '@/community/communityApi'
 import type { RoomUser } from '@/match/types'
 import type { CharInfo, LeaderboardEntry } from '@/shared/types'
@@ -119,22 +119,17 @@ export default function PlayerProfileCard({ leaderboardEntries, roomUsers = [] }
       >
         <Trophy size={14} aria-hidden="true" /> <span className="profile-history-label">내 정보</span>
       </button>
+      {/* The name renames; the trophy beside it opens the record. They used to
+          do the same thing, with a pencil alongside doing the only other
+          thing --- three controls for two actions, and the one you would
+          reach for first was the duplicate. */}
       <button
         type="button"
         className="profile-name"
-        onClick={() => setProfileOpen(true)}
-        disabled={!entry}
-        aria-label={`${username} 헤더에서 내 전적 보기`}
-      >
-        <span>{username}</span>
-      </button>
-      <button
-        type="button"
-        className="profile-edit"
         onClick={() => startEditing('header')}
         aria-label={`${username} 헤더에서 유저명 수정`}
       >
-        <Pencil size={14} aria-hidden="true" />
+        <span>{username}</span>
       </button>
     </div>
   ) : (
@@ -153,14 +148,6 @@ export default function PlayerProfileCard({ leaderboardEntries, roomUsers = [] }
                 <Radio size={12} aria-hidden="true" />
                 {online ? '온라인' : '오프라인'}
               </small>
-              <button
-                type="button"
-                className="sidebar-profile-edit"
-                onClick={() => startEditing('sidebar')}
-                aria-label={`${username} 유저명 수정`}
-              >
-                <Pencil size={14} aria-hidden="true" />
-              </button>
             </div>
           )}
         </div>
@@ -173,9 +160,8 @@ export default function PlayerProfileCard({ leaderboardEntries, roomUsers = [] }
               <button
                 type="button"
                 className="sidebar-profile-name"
-                onClick={() => setProfileOpen(true)}
-                disabled={!entry}
-                aria-label={`${username} 내 정보 보기`}
+                onClick={() => startEditing('sidebar')}
+                aria-label={`${username} 유저명 수정`}
               >
                 <span className="sidebar-profile-rank-position">#{entry?.rank ?? 'UNRANKED'}</span>
                 <strong>{username}</strong>

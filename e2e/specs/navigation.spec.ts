@@ -170,18 +170,20 @@ test.describe('Navigation', () => {
       const currentCenterY = identityBoxes[index]!.y + identityBoxes[index]!.height / 2
       expect(Math.abs(previousCenterY - currentCenterY)).toBeLessThanOrEqual(2)
     }
+    // No pencil in the heading any more: the name itself is the rename control,
+    // and a pencil beside it was a second button for the one thing the name
+    // already did.
     const headingItems = [
       card.locator('.sidebar-profile-heading > span'),
       card.locator('.sidebar-profile-presence'),
-      card.locator('.sidebar-profile-edit'),
     ]
     await Promise.all(headingItems.map(item => expect(item).toBeVisible()))
+    await expect(card.locator('.sidebar-profile-edit')).toHaveCount(0)
     const headingBoxes = await Promise.all(headingItems.map(item => item.boundingBox()))
     headingBoxes.forEach(box => expect(box).not.toBeNull())
     expect(headingBoxes[0]!.x + headingBoxes[0]!.width).toBeLessThan(headingBoxes[1]!.x)
-    expect(headingBoxes[1]!.x + headingBoxes[1]!.width).toBeLessThan(headingBoxes[2]!.x)
     await expect(rows).toHaveCount(2)
-    await expect(card.locator('.char-cell-record')).toHaveText([/250W 80LWR:76%/, /180W 60LWR:75%/])
+    await expect(card.locator('.char-cell-record')).toHaveText([/76%250W 80L/, /75%180W 60L/])
 
     for (let index = 0; index < 2; index += 1) {
       const rank = rows.nth(index).locator('.char-cell-rank')

@@ -113,8 +113,6 @@
 .sidebar-profile-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 3px; }
 .sidebar-profile-presence { display: flex; flex: 0 0 auto; align-items: center; gap: 2px; color: var(--color-txt-faint); font-size: var(--text-4xs); white-space: nowrap; }
 .sidebar-profile-presence.is-online { color: var(--color-accent); }
-.sidebar-profile-edit { display: grid; width: 26px; height: 26px; place-items: center; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--color-txt-dim); cursor: pointer; }
-.sidebar-profile-edit:hover { background: color-mix(in srgb, var(--color-surface-tint) 4%, transparent); color: var(--color-primary-text); }
 /* The leaderboard's own CharCell, stacked --- the same character shows the same
    way here as in the table it came from. */
 .sidebar-profile-characters { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--color-border); border-bottom: 1px solid var(--color-border); }

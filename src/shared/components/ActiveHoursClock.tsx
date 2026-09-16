@@ -1,3 +1,4 @@
+import { DAY_START_HOUR, dayHours, hourLabel as hh } from '@/shared/dayBoundary'
 function sectorPath(hour: number, cx: number, cy: number, innerRadius: number, outerRadius: number) {
   const gap = 0.045
   const start = hour * (Math.PI * 2 / 24) - Math.PI / 2 + gap
@@ -13,17 +14,11 @@ function sectorPath(hour: number, cx: number, cy: number, innerRadius: number, o
   return `M${x1} ${y1} L${x2} ${y2} A${outerRadius} ${outerRadius} 0 0 1 ${x3} ${y3} L${x4} ${y4} A${innerRadius} ${innerRadius} 0 0 0 ${x1} ${y1}Z`
 }
 
-/** Where a player's day begins, in KST. The strip below the ring reads from
- *  here rather than from 00:00, so a 22-02 session is one block at the
- *  right-hand end instead of two stubs pinned to opposite edges.
- *
- *  08:00, not midnight and not the 06:00 the aggregate charts use: this strip
- *  is about when a person plays, and the hour they get up is a better cut than
- *  the hour the date changes. Everything below derives from it --- the tick
- *  labels included --- so moving it moves the whole strip at once. */
-const DAY_START_HOUR = 8
-const STRIP_HOURS = Array.from({ length: 24 }, (_, offset) => (DAY_START_HOUR + offset) % 24)
-const hh = (hour: number) => String(hour).padStart(2, '0')
+/** The strip below the ring reads from the day boundary rather than from
+ *  00:00, so a 22-02 session is one block at the right-hand end instead of two
+ *  stubs pinned to opposite edges. The boundary itself lives in
+ *  `shared/dayBoundary`, which the stats tab's hourly chart reads too. */
+const STRIP_HOURS = dayHours()
 /** Five marks, one every six hours, starting and ending at the boundary. */
 const STRIP_LABELS = Array.from({ length: 5 }, (_, step) => hh((DAY_START_HOUR + step * 6) % 24))
 
