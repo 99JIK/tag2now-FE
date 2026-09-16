@@ -84,8 +84,11 @@ export default function App() {
     // splitting the number from its unit would say "방 3 개".
     { key: 'match', label: '매칭', badge: roomsLoaded ? rooms.data?.total ?? 0 : undefined, spoken: (n: number) => ` 방 ${n}개` },
     { key: 'reservation', label: '예약', badge: openReservations ?? undefined, spoken: (n: number) => ` 모집중 ${n}건` },
-    { key: 'leaderboard', label: '리더보드' },
+    // 커뮤니티 before 리더보드: the first three tabs are things happening now
+    // and the last three are places to read, and of those two the board is the
+    // one that changes daily.
     { key: 'community', label: '커뮤니티' },
+    { key: 'leaderboard', label: '리더보드' },
     { key: 'stats', label: '통계' },
   ], [roomsLoaded, rooms.data?.total, openReservations])
   const activePrimary = isRoomTab ? 'match' : activeTab
