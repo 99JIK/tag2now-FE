@@ -44,7 +44,7 @@ const OVERVIEW_DATA: OverviewData = {
     { npid: 'w2', online_name: 'WeeklyTwo', match_count: 80 },
   ],
   posts: [
-    { id: 1, author: 'PostAuthor', title: '첫 게시글', body: '', post_type: 'free', thumbs_up: 3, thumbs_down: 0, created_at: new Date().toISOString(), comment_count: 2 },
+    { id: 1, author: 'PostAuthor', title: '첫 게시글', body: '', post_type: 'free', characters: [], thumbs_up: 3, thumbs_down: 0, created_at: new Date().toISOString(), comment_count: 2 },
   ],
   reservations: [
     // Ranks out of order and three of them, so the row has to sort and to
@@ -65,20 +65,30 @@ const ROOMS: RoomsData = {
 }
 
 const ENTRIES: LeaderboardEntry[] = [
-  { np_id: 'p1', rank: 1, online_name: 'TopPlayer', player_info: { main_char_info: { name: 'Jin', rank_info: { name: 'Destroyer', tier: 'Destroyer' } }, sub_char_info: { name: 'Heihachi', rank_info: { name: 'Vanquisher', tier: 'Vanquisher' } } } },
+  { np_id: 'p1', rank: 1, online_name: 'TopPlayer', player_info: { main_char_info: { name: 'Jin', rank_info: { name: 'Destroyer', tier: '주황단' } }, sub_char_info: { name: 'Heihachi', rank_info: { name: 'Vanquisher', tier: '주황단' } } } },
   { np_id: 'p2', rank: 2, online_name: 'SecondPlayer', player_info: null },
 ]
 
 /** A KPI card is identified by its label; asserting on the bare number would
- * collide with any other figure that happens to match. */
+ * collide with any other figure that happens to match.
+ *
+ * The label is matched inside `.kpi-card-label` rather than anywhere on the
+ * page: 모집 중인 예약 names both a card up here and the section below it,
+ * and a bare getByText finds two. */
+function kpiCard(label: string): HTMLElement {
+  const found = [...document.querySelectorAll<HTMLElement>('.kpi-card')]
+    .filter((card) => card.querySelector('.kpi-card-label')?.textContent === label)
+  if (found.length !== 1) throw new Error(`expected one KPI card labelled "${label}", found ${found.length}`)
+  return found[0]
+}
+
 function kpiValue(label: string): string | null {
-  const card = screen.getByText(label).closest('.kpi-card')
-  return card?.querySelector('.kpi-card-value')?.textContent ?? null
+  return kpiCard(label).querySelector('.kpi-card-value')?.textContent ?? null
 }
 
 /** The whole card is the link, so its href is what the tile does. */
 function kpiHref(label: string): string | null {
-  return screen.getByText(label).closest('a')?.getAttribute('href') ?? null
+  return kpiCard(label).closest('a')?.getAttribute('href') ?? null
 }
 
 function polled(data: OverviewData | null, over: Partial<{ loading: boolean; refreshing: boolean; error: string | null; refresh: () => void }> = {}) {
@@ -111,10 +121,11 @@ afterEach(() => {
 })
 
 describe('Overview', () => {
-  it('shows loading state before the first load', () => {
+  it('announces the first load and reserves the card heights', () => {
     mockedUseOverview.mockReturnValue(polled(null, { loading: true }))
     renderOverview()
-    expect(screen.getByText('개요를 불러오는 중...')).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent('현황을 불러오는 중')
+    expect(document.querySelectorAll('.skeleton-card').length).toBeGreaterThan(1)
   })
 
   it('shows the error and a retry control when the fetch fails', () => {
@@ -143,13 +154,55 @@ describe('Overview', () => {
     expect(screen.getByRole('button', { name: '새로고침' })).toBeEnabled()
   })
 
+  // One card for the rooms, not two. "접속자" and "활성 방" printed the same
+  // number whenever every room held one player, which is most of the time.
   it('renders live room KPIs from props rather than fetching them', () => {
     renderOverview()
 
-    expect(kpiValue('접속자')).toBe('7')
-    expect(kpiValue('활성 방')).toBe('3')
-    expect(screen.getByText('랭매 2 · 플매 1')).toBeInTheDocument()
-    expect(kpiValue('등록 플레이어')).toBe('512')
+    expect(kpiValue('지금 접속')).toBe('7')
+    expect(screen.getByText('방 3개 · 랭매 2 · 플매 1')).toBeInTheDocument()
+    expect(document.querySelector('.kpi-grid')?.textContent).not.toContain('활성 방')
+  })
+
+  // The card counts every joinable reservation; the list under it shows the
+  // three soonest. Without the remainder row the page printed "4" directly
+  // above three rows under the same heading and left the reader to guess.
+  it('says how many reservations the list could not fit', () => {
+    mockedUseOverview.mockReturnValue(polled({
+      ...OVERVIEW_DATA,
+      reservations: [1, 2, 3, 4, 5].map((id) => ({
+        id, start_at: `2026-09-02T1${id}:00:00Z`, host_display_name: `Host${id}`, host_ranks: [],
+        match_type: 'any' as const, capacity: 2, memo: '', status: 'open' as const,
+        participant_count: 0, created_at: '2026-09-02T09:00:00Z',
+      })),
+    }))
+    renderOverview()
+
+    expect(kpiValue('모집 중인 예약')).toBe('5')
+    const more = screen.getByRole('link', { name: '외 2건 더 보기' })
+    expect(more).toHaveAttribute('href', '/reservation')
+  })
+
+  // Nothing is being hidden when the list is not truncated, so nothing says so.
+  it('adds no remainder row when the list holds every reservation', () => {
+    renderOverview()
+
+    expect(screen.queryByText(/건 더 보기$/)).not.toBeInTheDocument()
+  })
+
+  // The registered-player total moved off this page: it is the one figure here
+  // that is not about now, and the leaderboard tab already heads with it.
+  it('counts the reservations still taking people instead of registered players', () => {
+    renderOverview()
+
+    // Two of the three fixtures are joinable; the 2/2 one is full, which is the
+    // distinction the count exists to make.
+    expect(kpiValue('모집 중인 예약')).toBe('2')
+    expect(kpiHref('모집 중인 예약')).toBe('/reservation')
+    // 12:00Z is the earliest of the two, and the hint is in KST like every
+    // other time on this page.
+    expect(kpiCard('모집 중인 예약').textContent).toContain('가장 빠른 약속 21:00')
+    expect(document.querySelector('.kpi-grid')?.textContent).not.toContain('등록 플레이어')
   })
 
   // Nothing caught the h1-to-h3 gap that opened when .content-heading and its
@@ -168,10 +221,9 @@ describe('Overview', () => {
   it('opens the tab each KPI is drawn from', () => {
     renderOverview()
 
-    expect(kpiHref('접속자')).toBe('/match/rank_match')
-    expect(kpiHref('활성 방')).toBe('/match/rank_match')
-    expect(kpiHref('오늘 접속자 수')).toBe('/stats')
-    expect(kpiHref('등록 플레이어')).toBe('/leaderboard')
+    expect(kpiHref('지금 접속')).toBe('/match/rank_match')
+    expect(kpiHref('오늘 접속자')).toBe('/stats')
+    expect(kpiHref('모집 중인 예약')).toBe('/reservation')
   })
 
   // The card's own text says what the number is, never where it leads, so the
@@ -182,8 +234,8 @@ describe('Overview', () => {
   it('names the destination without dropping the card content', () => {
     renderOverview()
 
-    const card = screen.getByRole('link', { name: /활성 방/ })
-    expect(card).toHaveAccessibleName(/랭매 2 · 플매 1/)
+    const card = screen.getByRole('link', { name: /지금 접속/ })
+    expect(card).toHaveAccessibleName(/방 3개 · 랭매 2 · 플매 1/)
     expect(card).toHaveAccessibleName(/매치 탭으로 이동$/)
   })
 
@@ -194,7 +246,7 @@ describe('Overview', () => {
       rooms: { ...ROOMS, groups: { player_match: ROOMS.groups.player_match, rank_match: ROOMS.groups.rank_match } },
     })
 
-    expect(kpiHref('접속자')).toBe('/match/rank_match')
+    expect(kpiHref('지금 접속')).toBe('/match/rank_match')
   })
 
   it('orders the room breakdown regardless of the shuffled payload', () => {
@@ -202,19 +254,18 @@ describe('Overview', () => {
     renderOverview({
       rooms: { ...ROOMS, groups: { player_match: ROOMS.groups.player_match, rank_match: ROOMS.groups.rank_match } },
     })
-    expect(screen.getByText('랭매 2 · 플매 1')).toBeInTheDocument()
+    expect(screen.getByText('방 3개 · 랭매 2 · 플매 1')).toBeInTheDocument()
   })
 
   it('shows an em dash rather than zero while rooms are still loading', () => {
     renderOverview({ rooms: null, roomsLoading: true })
     expect(screen.getByText('불러오는 중')).toBeInTheDocument()
-    expect(kpiValue('접속자')).toBe('—')
-    expect(kpiValue('활성 방')).toBe('—')
+    expect(kpiValue('지금 접속')).toBe('—')
   })
 
   it("reports today's unique players against yesterday, not the concurrent peak", () => {
     renderOverview()
-    expect(kpiValue('오늘 접속자 수')).toBe('172')
+    expect(kpiValue('오늘 접속자')).toBe('172')
     expect(screen.getByText('어제 128명')).toBeInTheDocument()
   })
 
@@ -226,7 +277,7 @@ describe('Overview', () => {
 
     renderOverview()
 
-    expect(kpiValue('오늘 접속자 수')).toBe('—')
+    expect(kpiValue('오늘 접속자')).toBe('—')
     expect(screen.getByText('접속 기록 없음')).toBeInTheDocument()
   })
 
@@ -253,9 +304,11 @@ describe('Overview', () => {
     renderOverview()
 
     const row = screen.getByText('TopPlayer').closest('.overview-rank-row')
+    // Portrait then rank inside each cell, main's pair before sub's — the
+    // reading order the leaderboard's CharCell uses.
     const chars = row!.querySelectorAll('.mini-char img[alt]')
     expect(Array.from(chars).map((c) => c.getAttribute('alt'))).toEqual([
-      'Destroyer', 'Jin', 'Vanquisher', 'Heihachi',
+      'Jin', 'Destroyer', 'Heihachi', 'Vanquisher',
     ])
   })
 

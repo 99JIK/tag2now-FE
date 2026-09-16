@@ -1,5 +1,5 @@
-import { charImageUrl } from '@/shared/characterImage'
 import RankImage from '@/shared/components/RankImage'
+import { charImageUrl } from '@/shared/characterImage'
 import type { CharInfo } from '@/shared/types'
 
 /** The overview's row-sized counterpart to CharCell.
@@ -18,10 +18,11 @@ export default function MiniCharCell({ char, label }: { char?: CharInfo | null; 
 
   return (
     <span className="mini-char" title={title}>
-      <RankImage rankInfo={char.rank_info} className="mini-char-rank" />
+      {/* Portrait then rank, the order CharCell uses on the leaderboard. */}
       {url
-        ? <img src={url} alt={char.name} className="mini-char-portrait" loading="lazy" />
+        ? <img src={url} alt={char.name} className="char-art mini-char-portrait" loading="lazy" />
         : <span className="mini-char-name">{char.name}</span>}
+      <RankImage rankInfo={char.rank_info} className="mini-char-rank" />
     </span>
   )
 }

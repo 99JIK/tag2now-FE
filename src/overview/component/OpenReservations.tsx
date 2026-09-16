@@ -1,16 +1,27 @@
 import { Link } from 'react-router-dom'
-import { Clock3, Users } from 'lucide-react'
-import { reservationPath } from '@/config/routes'
+import { ArrowRight, Clock3, Users } from 'lucide-react'
+import { pathOf, reservationPath } from '@/config/routes'
 import type { ApiReservation } from '@/reservation/reservationApi'
-import { kstTimeFormat, MATCH_TYPE_LABELS } from '@/reservation/reservationLabels'
+import { isJoinable, kstTimeFormat, MATCH_TYPE_LABELS } from '@/reservation/reservationLabels'
 import RankSummary from '@/reservation/component/RankSummary'
 
-/** Only reservations still taking people — a full or matched one is not
- * something the reader can act on from a summary screen. */
-const isJoinable = (r: ApiReservation) => r.status === 'open' && r.participant_count < r.capacity
-
+/** The soonest few, and how many it could not fit.
+ *
+ * `fetchReservations` hands over the whole list, so this component *knows* the
+ * total — and the KPI card above it prints that total. Slicing to `limit`
+ * without saying so put "모집 중인 예약 4" directly above three rows under
+ * the same heading, and the only way to tell which was wrong was to open the
+ * tab. The remainder is a row of its own rather than a badge on the heading:
+ * it lands where the reader's eye already is, at the end of the list, and it
+ * doubles as the way to the rest.
+ *
+ * 최신 게시글 needs none of this. `fetchPosts(1, 3)` asks the backend for three
+ * and is given three, so there is no total to contradict — a "latest" list is
+ * a slice by definition and nothing on the page claims otherwise.
+ */
 export default function OpenReservations({ reservations, limit = 3 }: { reservations: ApiReservation[]; limit?: number }) {
-  const joinable = reservations.filter(isJoinable).slice(0, limit)
+  const joinable = reservations.filter(isJoinable)
+  const shown = joinable.slice(0, limit)
   // Two lines, the shape panelStatus already uses: the terse uppercase label
   // .state-msg is styled for, then a way forward. An empty board is the best
   // moment to post one, and the card said only that there was nothing here.
@@ -23,9 +34,11 @@ export default function OpenReservations({ reservations, limit = 3 }: { reservat
     </div>
   )
 
+  const hidden = joinable.length - shown.length
+
   return (
     <ul className="overview-list">
-      {joinable.map((r) => (
+      {shown.map((r) => (
         <li key={r.id}>
           <Link className="overview-list-row overview-list-link" to={reservationPath(r.id)}>
             <span className="overview-time"><Clock3 size={11} aria-hidden="true" />{kstTimeFormat.format(new Date(r.start_at))}</span>
@@ -44,6 +57,14 @@ export default function OpenReservations({ reservations, limit = 3 }: { reservat
           </Link>
         </li>
       ))}
+      {hidden > 0 && (
+        <li>
+          <Link className="overview-list-row overview-list-more" to={pathOf('reservation')}>
+            외 {hidden}건 더 보기
+            <ArrowRight size={12} aria-hidden="true" />
+          </Link>
+        </li>
+      )}
     </ul>
   )
 }

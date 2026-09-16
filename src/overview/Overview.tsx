@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, CalendarDays, Crown, MessageSquareText, RefreshCw, TrendingUp, Trophy, Users } from 'lucide-react'
+import { CalendarDays, Crown, MessageSquareText, RefreshCw, TrendingUp, Trophy, Users } from 'lucide-react'
 import DailyChart from '@/shared/components/DailyChart'
 import PlayerHistoryPanel from '@/shared/components/PlayerHistoryPanel'
 import { panelStatus } from '@/shared/util/panelStatus'
@@ -9,7 +9,10 @@ import type { LeaderboardEntry } from '@/shared/types'
 import type { RoomsData } from '@/match/types'
 import type { WeeklyTopPlayer } from '@/stat/types'
 import { formatGroupName, GROUP_ORDER } from '@/config/tabConfig'
+import type { ApiReservation } from '@/reservation/reservationApi'
+import { isJoinable, kstTimeFormat } from '@/reservation/reservationLabels'
 import { pathOf } from '@/config/routes'
+import { CardGridSkeleton, ListSkeleton } from '@/shared/components/Skeleton'
 
 interface OverviewProps {
   rooms: RoomsData | null
@@ -28,8 +31,15 @@ const UNKNOWN = '—'
  * groups, so the response's own first key would move the target every poll. */
 const ROOMS_PATH = pathOf(GROUP_ORDER[0])
 
-function roomsKpi(rooms: RoomsData | null, loading: boolean): { players: string; active: string; breakdown: string } {
-  if (!rooms) return { players: UNKNOWN, active: UNKNOWN, breakdown: loading ? '불러오는 중' : '연결 실패' }
+/** One card, not two.
+ *
+ * "접속자" and "활성 방" were the same fact told twice — with a room per
+ * player they printed the same number side by side — and the header's Live
+ * badge told it a third time. The players are the figure a live dashboard is
+ * asked for, so that stays the value; the rooms it takes to hold them are a
+ * detail about it, which is what a hint is for. */
+function roomsKpi(rooms: RoomsData | null, loading: boolean): { players: string; breakdown: string } {
+  if (!rooms) return { players: UNKNOWN, breakdown: loading ? '불러오는 중' : '연결 실패' }
 
   // fetchRoomsAll shuffles the groups so neither match type is always shown
   // first in the tab strip. A KPI hint that reorders itself every 5s poll is
@@ -39,7 +49,27 @@ function roomsKpi(rooms: RoomsData | null, loading: boolean): { players: string;
   const breakdown = ordered
     .map(([key, list]) => `${formatGroupName(key)} ${list.length}`)
     .join(' · ')
-  return { players: String(rooms.totalUsers), active: String(rooms.total), breakdown }
+  return { players: String(rooms.totalUsers), breakdown: `방 ${rooms.total}개 · ${breakdown}` }
+}
+
+/** The card that replaced 등록 플레이어.
+ *
+ * A registered-player total is the one figure on this row nobody can act on:
+ * it moves by a handful a week and the same number heads the leaderboard tab.
+ * What is missing from a page titled "지금 서버에서 벌어지는 일" is the
+ * part of it that has not happened yet — so the row now reads 지금 → 오늘 →
+ * 이후, and every card names its own time frame.
+ *
+ * The list is the one `useOverview` already fetched for the section below; no
+ * request is added for this. */
+function openReservationsKpi(reservations: ApiReservation[]): { value: string; hint: string } {
+  const joinable = reservations.filter(isJoinable)
+  if (joinable.length === 0) return { value: '0', hint: '예약 탭에서 새 약속 만들기' }
+  const soonest = joinable.reduce((a, b) => (a.start_at <= b.start_at ? a : b))
+  return {
+    value: String(joinable.length),
+    hint: `가장 빠른 약속 ${kstTimeFormat.format(new Date(soonest.start_at))}`,
+  }
 }
 
 /** 그날 한 번이라도 접속한 인원(unique_players). 동시 접속 피크는 이보다 작아 KPI로 쓰지 않는다. */
@@ -94,11 +124,16 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
 
   // "불러오는 중", not "로딩 중": the KPI hint below already says the first and
   // the match and history panels say it too, so this was the odd one out.
-  const status = panelStatus(loading, error, '개요를 불러오는 중...', refresh)
+  const status = panelStatus(loading, error, {
+    loadingMsg: '현황을 불러오는 중',
+    onRetry: refresh,
+    skeleton: <><CardGridSkeleton cards={4} label="현황을 불러오는 중" /><ListSkeleton rows={4} /></>,
+  })
   if (status) return status
 
   const kpi = roomsKpi(rooms, roomsLoading)
   const today = todayPlayers(data?.daily ?? [])
+  const upcoming = openReservationsKpi(data?.reservations ?? [])
 
   return (
     <div className="panel overview-panel">
@@ -119,11 +154,12 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
         </button>
       </div>
 
+      {/* 지금 → 오늘 → 이후. Three figures on three time frames, each named in
+          its own label, so no two cards can be read as the same fact. */}
       <div className="kpi-grid">
-        <KpiCard icon={Users} label="접속자" value={kpi.players} hint="지금 방에 있는 인원" live linkLabel="매치" to={ROOMS_PATH} />
-        <KpiCard icon={Activity} label="활성 방" value={kpi.active} hint={kpi.breakdown} live linkLabel="매치" to={ROOMS_PATH} />
-        <KpiCard icon={TrendingUp} label="오늘 접속자 수" value={today.value} hint={today.hint} linkLabel="통계" to={pathOf('stats')} />
-        <KpiCard icon={Trophy} label="등록 플레이어" value={leaderboardTotal != null ? String(leaderboardTotal) : UNKNOWN} hint="리더보드 집계" linkLabel="리더보드" to={pathOf('leaderboard')} />
+        <KpiCard icon={Users} label="지금 접속" value={kpi.players} hint={kpi.breakdown} live linkLabel="매치" to={ROOMS_PATH} />
+        <KpiCard icon={TrendingUp} label="오늘 접속자" value={today.value} hint={today.hint} linkLabel="통계" to={pathOf('stats')} />
+        <KpiCard icon={CalendarDays} label="모집 중인 예약" value={upcoming.value} hint={upcoming.hint} linkLabel="예약" to={pathOf('reservation')} />
       </div>
 
       {/* The two cards that expire, above the chart rather than below it. Both
@@ -145,7 +181,7 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
       <section className="chart-panel overview-chart" aria-labelledby="overview-daily-heading">
         {/* A sibling of the four card sections, so it takes their level. */}
         <h3 id="overview-daily-heading">최근 7일 접속자 추이</h3>
-        <DailyChart data={data?.daily ?? []} height={200} axisGutter={0} />
+        <DailyChart data={data?.daily ?? []} height={200} />
       </section>
 
       {/* Kept below the chart: a ranking is slow-moving reference data with a
@@ -171,6 +207,7 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
         <PlayerHistoryPanel
           npid={selectedNpid}
           leaderboardEntry={selectedEntry}
+          leaderboardEntries={leaderboardEntries}
           onClose={() => setSelectedNpid(null)}
         />
       )}

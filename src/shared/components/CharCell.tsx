@@ -15,16 +15,18 @@ export default function CharCell({ name, rankInfo, wins, losses }: CharCellProps
   const total = (wins ?? 0) + (losses ?? 0)
   const winRate = total > 0 ? Math.round((wins ?? 0) / total * 100) : null
   return (
-    <div className="flex flex-col sm:flex-row items-center sm:justify-center gap-1 sm:gap-2 sm:w-auto mx-auto">
-      <div className="flex justify-center flex-col sm:flex-row items-center gap-1">
-        <RankImage rankInfo={rankInfo} className="char-rank h-8 w-auto" />
-        {url && <img src={url} alt={name} className="w-13 h-13 sm:w-15 sm:h-15 object-contain" />}
+    // Portrait, then rank, then record — left to right in one line at every
+    // width. The old cell stacked on mobile and wrapped the rank banner above
+    // the portrait, which is what made the row 100px tall there.
+    <div className="char-cell">
+      {url && <img src={url} alt={name} className="char-art char-cell-portrait" />}
+      <div className="char-cell-meta">
+        <RankImage rankInfo={rankInfo} className="char-cell-rank" />
         {winRate != null && (
-          <div className="hidden w-3/10 sm:block text-sm leading-tight whitespace-nowrap text-left tabular-nums">
-            <span className="text-accent">{wins}<span className="text-txt-faint">W</span></span> <span className="text-tier-red">{losses}<span className="text-txt-faint">L</span></span>
-            <br />
-            <span className="text-txt-dim">WR:</span>{winRate}%
-          </div>
+          <span className="char-cell-record">
+            <span className="char-cell-wr">{winRate}%</span>
+            <span className="char-cell-wl">{wins}<span>W</span> {losses}<span>L</span></span>
+          </span>
         )}
       </div>
     </div>

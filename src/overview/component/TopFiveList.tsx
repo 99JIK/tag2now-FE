@@ -19,9 +19,10 @@ export interface TopFiveRow {
 
 interface TopFiveListProps {
   rows: TopFiveRow[]
-  /** Header for the right-hand column, e.g. "매치". Omitting it drops the
-   * column outright — the leaderboard ranks by the position already in the
-   * first column, so a "랭킹" of 1..5 beside a "#" of 1..5 said it twice. */
+  /** Names what `row.detail` counts, e.g. "매치". It is read to the figure
+   * rather than shown as a column header: these cards are half the width of
+   * the leaderboard, and a fifth column crushed the player name to a single
+   * character. The figure now sits under the name instead. */
   detailLabel?: string
   emptyMsg?: string
   /** Opens the player history panel, the same way the leaderboard does. */
@@ -34,19 +35,20 @@ export default function TopFiveList({ rows, detailLabel, emptyMsg = '데이터 �
   return (
     <ol className={`overview-rank-list${detailLabel ? '' : ' has-no-detail'}`} aria-label={`상위 ${rows.length}명`}>
       <li className="overview-rank-head" aria-hidden="true">
-        <span>#</span><span>Player</span>{detailLabel && <span>{detailLabel}</span>}<span>Main</span><span>Sub</span>
+        <span>#</span><span>Player</span><span>Main</span><span>Sub</span>
       </li>
       {rows.map((row, i) => {
         const medal = i < 3 ? MEDAL[i] : null
         return (
           <li
             key={row.key}
-            // The podium takes a sheen the rest of the list does not, so the
-            // top three read as a group before the numbers are.
-            className={medal ? 'overview-rank-row is-medal' : 'overview-rank-row'}
-            style={medal ? { borderLeftColor: medal.border } : undefined}
+            className={medal ? 'overview-rank-row is-podium' : 'overview-rank-row'}
+            style={medal ? { '--medal': medal.color } as React.CSSProperties : undefined}
           >
-            <span className="overview-rank-pos" style={medal ? { color: medal.color } : undefined}>{i + 1}</span>
+            <span
+              className={`rank-no${medal ? ' is-podium' : ''}`}
+              style={medal ? { '--medal': medal.color } as React.CSSProperties : undefined}
+            >{i + 1}</span>
             <span className="overview-rank-name">
               {/* The button stretches over the whole row in CSS, so a reader
                   aiming at the portrait or the match count opens the same
@@ -56,8 +58,13 @@ export default function TopFiveList({ rows, detailLabel, emptyMsg = '데이터 �
               <button type="button" className="player-btn overview-rank-btn" onClick={() => onSelect(row.npid)}>
                 <span className="overview-rank-btn-label">{row.name}</span>
               </button>
+              {row.detail && (
+                <span className="overview-rank-detail">
+                  {row.detail}
+                  {detailLabel && <span className="sr-only"> {detailLabel}</span>}
+                </span>
+              )}
             </span>
-            {row.detail && <span className="overview-rank-detail">{row.detail}</span>}
             <MiniCharCell char={row.mainChar} label="메인" />
             <MiniCharCell char={row.subChar} label="서브" />
           </li>
