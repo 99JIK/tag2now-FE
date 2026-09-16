@@ -13,7 +13,7 @@ test.describe('Navigation', () => {
   })
 
   test('page loads on the overview', async ({ page }) => {
-    await expect(page.getByRole('tab', { name: '개요' })).toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: '홈' })).toHaveAttribute('aria-selected', 'true')
     await expect(page.getByRole('heading', { name: '한눈에 보기' })).toBeVisible()
 
     // The room-type strip belongs to the match tab and stays out of the way.
@@ -31,7 +31,7 @@ test.describe('Navigation', () => {
   test('all expected tabs are visible', async ({ page }) => {
     const mainTabs = page.getByRole('tablist', { name: 'Main navigation' }).getByRole('tab')
     // 매칭 and 예약 trail a count badge, so match the label, not the whole text.
-    await expect(mainTabs).toHaveText([/^개요/, /^매칭/, /^예약/, /^리더보드/, /^커뮤니티/, /^통계/])
+    await expect(mainTabs).toHaveText([/^홈/, /^매칭/, /^예약/, /^리더보드/, /^커뮤니티/, /^통계/])
 
     await goToMatchTab(page)
     const roomTabs = page.getByRole('tablist', { name: '매칭 종류 선택' }).getByRole('tab')
@@ -105,6 +105,6 @@ test.describe('Navigation', () => {
     await expect(leaderboardTab).toHaveAttribute('aria-selected', 'true')
 
     // Only one tab is ever selected, so the previous one has to give it up.
-    await expect(page.getByRole('tab', { name: '개요' })).toHaveAttribute('aria-selected', 'false')
+    await expect(page.getByRole('tab', { name: '홈' })).toHaveAttribute('aria-selected', 'false')
   })
 })

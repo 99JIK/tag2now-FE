@@ -17,11 +17,23 @@ test.describe('Overview', () => {
   })
 
   test("shows live room figures alongside today's unique players", async ({ page }) => {
-    const players = page.getByText('접속자', { exact: true }).locator('..').locator('..')
+    const players = page.locator('.kpi-card', { hasText: '지금 접속' })
     await expect(players).toContainText('6')  // rooms fixture: 6 users across both groups
+    // The rooms are a detail of that figure now, not a card of their own: two
+    // cards printed the same number whenever every room held one player.
+    await expect(players).toContainText('방 3개')
 
     // 일별 fixture의 unique_players가 172 → 149로 끝나므로 힌트는 전날 값.
     await expect(page.getByText('어제 172명')).toBeVisible()
+  })
+
+  // The third card is the one that replaced 등록 플레이어: a figure about now
+  // rather than a running total the leaderboard tab already heads with.
+  test('counts only the reservations still taking people', async ({ page }) => {
+    // Two in the fixture, one of them full.
+    const upcoming = page.locator('.kpi-card', { hasText: '모집 중인 예약' })
+    await expect(upcoming.locator('.kpi-card-value')).toHaveText('1')
+    await expect(upcoming).toHaveAttribute('href', '/reservation')
   })
 
   test('summarises each feature from its own endpoint', async ({ page }) => {
@@ -60,7 +72,7 @@ test.describe('Overview', () => {
     // would otherwise match ("접속자 통계").
     const nav = page.getByRole('tablist', { name: 'Main navigation' })
     await expect(nav.getByRole('tab', { name: '통계' })).toHaveAttribute('aria-selected', 'true')
-    await expect(nav.getByRole('tab', { name: '개요' })).toHaveAttribute('aria-selected', 'false')
+    await expect(nav.getByRole('tab', { name: '홈' })).toHaveAttribute('aria-selected', 'false')
   })
 
   // The summary rows are entry points, not just readouts: clicking one opens
@@ -95,23 +107,22 @@ test.describe('Overview', () => {
     // name, and inside the row in both the desktop and the wrapped layout.
     // Clicked through the row rather than at page coordinates so Playwright
     // scrolls it into view first, and so its hit test still has to pass.
-    await top.click({ position: { x: 10, y: 60 } })
+    // The offset is measured rather than fixed — a hard 60px fell outside the
+    // row the moment its height changed, and the click then landed on the list
+    // behind it and reported a hit-test failure instead of a broken overlay.
+    const box = (await top.boundingBox())!
+    await top.click({ position: { x: 10, y: box.height - 8 } })
 
     await expect(page.getByRole('button', { name: '플레이어 기록 닫기' })).toBeVisible()
   })
 
-  // The podium rows paint a sheen over their character art, and that layer sits
-  // above the name button's row-wide overlay in paint order. Without
-  // pointer-events: none it takes this click and the row stops opening.
-  test('the podium sheen does not swallow the row click', async ({ page }) => {
-    // Parked over the row rather than left to sweep. Unpinned it sits outside
-    // the row for three quarters of its cycle, so a click usually misses it and
-    // the test would only fail on the rare run that caught the pass --- worse
-    // than no guard. This holds it where it does the damage.
-    await page.addStyleTag({
-      content: '.overview-rank-row.is-medal::after { animation: none !important; transform: none !important; }',
-    })
-    const medal = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-row.is-medal').first()
+  // The podium rows decorate themselves, and whatever they use has to stay
+  // under the name button's row-wide click overlay. It has not always: a sheen
+  // layer painted over the row took this click and the row stopped opening.
+  // The far edge is the part a decoration reaches last, so that is where this
+  // clicks.
+  test('a podium row opens the player from its far edge', async ({ page }) => {
+    const medal = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-row.is-podium').first()
     const box = (await medal.boundingBox())!
 
     await medal.click({ position: { x: box.width - 20, y: box.height / 2 } })
