@@ -3,14 +3,18 @@ import { Route, Routes, useNavigate } from 'react-router-dom'
 import Leaderboard from "@/shared/Leaderboard";
 import Stats from "@/stat/Stats"
 import Header from "@/shared/components/Header";
+import LiveBadge from "@/shared/components/LiveBadge";
+import ProfileControl from "@/shared/components/ProfileControl";
 import Footer from "@/shared/components/Footer";
 import PatchNotes from "@/shared/components/PatchNotes";
 import { GROUP_ORDER, formatGroupName } from '@/config/tabConfig'
 import { firstRoomPath, isRoomTab as isRoomTabKey, pathOf } from '@/config/routes'
 import useActiveTab from '@/shared/hooks/useActiveTab'
+import useMediaQuery from '@/shared/hooks/useMediaQuery'
 import useLeaderboard from "@/shared/hooks/useLeaderboard";
 import useRooms from "@/match/useRooms";
 import useReservations, { countOpen } from "@/reservation/useReservations";
+import { POLL } from '@/config/polling'
 import Community from "@/community/Community";
 import Rooms from "@/match/Rooms";
 import type { Room } from "@/match/types";
@@ -22,10 +26,15 @@ import {
   CalendarDays,
   ChevronRight,
   MessageSquareText,
-  Radio,
   Swords,
   Trophy,
 } from 'lucide-react'
+
+/** The one breakpoint this file has to know about, because at it the sidebar
+ * stops being a column and becomes a six-slot bottom bar — there is no room
+ * above the nav for the profile, so it goes back in the header. Kept in step
+ * with the `max-width: 760px` block in `styles/responsive.css` by hand. */
+const COMPACT_LAYOUT = '(max-width: 760px)'
 
 // Before the first successful load the count is unknown, not zero - "(0)" would
 // assert there are no rooms while the fetch is still in flight or has failed.
@@ -38,9 +47,16 @@ function roomCountLabel(rooms: Room[] | undefined, loaded: boolean): string {
 export default function App() {
   const navigate = useNavigate()
   const activeTab = useActiveTab()
+  const compact = useMediaQuery(COMPACT_LAYOUT)
   const lb = useLeaderboard()
   const rooms = useRooms()
-  const reservations = useReservations()
+  // One reservation poll for the whole app, shared with the panel. The rate
+  // follows the active tab: a user looking at a roster fill wants it fast, and
+  // a user on any other tab only needs the badge to be honest. Both are the
+  // same request — the panel used to run a second 10s poll of its own.
+  const reservations = useReservations(
+    activeTab === 'reservation' ? POLL.reservationsActive : POLL.reservationsBackground,
+  )
 
   const groups = rooms.data?.groups ?? {}
   const roomsLoaded = rooms.data !== null
@@ -60,7 +76,11 @@ export default function App() {
   // "매칭 0" tells the user the lobby is empty, which is worth knowing.
   const openReservations = reservations.data && countOpen(reservations.data)
   const primaryTabs = useMemo(() => [
-    { key: 'overview', label: '개요' },
+    // '홈', not '개요'. This tab owns "/" and is where the site opens, and what
+    // it shows is what is happening right now — not a summary of a document.
+    // The panel's own heading (한눈에 보기) already does the summarising, so
+    // naming the tab that too gave one screen three names.
+    { key: 'overview', label: '홈' },
     // `spoken` is the whole badge as assistive tech reads it, in one element:
     // an accessible name is joined across element boundaries with a space, so
     // splitting the number from its unit would say "방 3 개".
@@ -110,9 +130,18 @@ export default function App() {
     <div className="app-shell">
       <a className="skip-link" href="#mainContent">본문으로 건너뛰기</a>
       <PatchNotes />
-      <Header totalUsers={rooms.data?.totalUsers} leaderboardEntries={lb.data?.entries} />
+      <Header>{compact && <ProfileControl leaderboardEntries={lb.data?.entries} />}</Header>
       <div className="app-layout">
         <aside className="app-sidebar" aria-label="서비스 메뉴">
+          {/* Live first, then who you are, then where you can go. Only one
+              ProfileControl is ever mounted — a second copy would hold a second
+              draft of the username being edited. */}
+          {!compact && (
+            <div className="sidebar-profile">
+              <LiveBadge totalUsers={rooms.data?.totalUsers} />
+              <ProfileControl leaderboardEntries={lb.data?.entries} />
+            </div>
+          )}
           <div className="sidebar-heading">
             <span>Navigation</span>
             <ChevronRight size={14} aria-hidden="true" />
@@ -157,10 +186,6 @@ export default function App() {
               })()
             ))}
           </nav>
-          <div className="sidebar-status">
-            <Radio size={15} aria-hidden="true" />
-            <div><strong>Live service</strong><span>실시간 데이터 연결됨</span></div>
-          </div>
         </aside>
 
         <main id="mainContent" className="app-main">
