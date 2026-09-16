@@ -62,9 +62,12 @@ test.describe('Overview', () => {
     const nameBox = await top.locator('.overview-rank-name').boundingBox()
     const nameLabel = top.locator('.overview-rank-btn-label')
     const detailBox = await top.locator('.overview-rank-detail').boundingBox()
+    // The visible figure only. The cell also carries an sr-only label naming
+    // what the figure counts, and selecting the whole element measured that
+    // too --- three client rects for one unwrapped number.
     const detailTextBox = await top.locator('.overview-rank-detail').evaluate(element => {
       const range = document.createRange()
-      range.selectNodeContents(element)
+      range.selectNode(element.firstChild!)
       const rect = range.getBoundingClientRect()
       return { x: rect.x, width: rect.width, lines: range.getClientRects().length }
     })
@@ -75,21 +78,36 @@ test.describe('Overview', () => {
     expect(detailBox).not.toBeNull()
     expect(rankBox).not.toBeNull()
     expect(portraitBox).not.toBeNull()
-    expect(nameBox!.x + nameBox!.width).toBeLessThanOrEqual(detailBox!.x)
-    expect(rankBox!.x - (detailTextBox.x + detailTextBox.width)).toBeGreaterThanOrEqual(10)
+    // The count sits *under* the name, not after it. These cards are half the
+    // page wide, and a fifth column for the figure crushed the name to a
+    // character and an ellipsis; stacked, both get the column's full width.
+    expect(detailBox!.y).toBeGreaterThanOrEqual(nameBox!.y)
+    expect(detailBox!.x).toBeGreaterThanOrEqual(nameBox!.x - 1)
+    // Neither spills into the character cells beside them.
+    expect(nameBox!.x + nameBox!.width).toBeLessThanOrEqual(rankBox!.x)
+    expect(detailTextBox.x + detailTextBox.width).toBeLessThanOrEqual(rankBox!.x)
     // Three-digit weekly counts are routine (the fixture's top player has 132),
     // and a column too narrow for them broke "132판" across two lines — which
-    // the gap check above still passes, since it measures the wrapped box.
+    // a box-based check would still pass, since it measures the wrapped box.
     expect(detailTextBox.lines).toBe(1)
     // The markup keeps the whole name; CSS shortens it with an ellipsis only
     // when the column runs out, and the label never spills into the count.
     const labelBox = await nameLabel.boundingBox()
     expect(labelBox).not.toBeNull()
-    expect(labelBox!.x + labelBox!.width).toBeLessThanOrEqual(detailBox!.x)
+    expect(labelBox!.x + labelBox!.width).toBeLessThanOrEqual(rankBox!.x)
     await expect(nameLabel).toHaveText('TagComboKing')
-    expect(rankBox!.width).toBeLessThanOrEqual(54.72)
-    expect(portraitBox!.width).toBeCloseTo(36, 1)
-    expect(portraitBox!.height).toBeCloseTo(36, 1)
+    // The same art at the same size as the leaderboard's own cell --- these two
+    // lists show the same players, and differing on size made them look like
+    // different data. The figures are --rank-art-w / --rank-art-h and the
+    // portrait height .mini-char-portrait sets; a change here should be a
+    // change to the token, not to this list alone.
+    const artSizes = await top.evaluate(() => {
+      const root = getComputedStyle(document.documentElement)
+      return { w: root.getPropertyValue('--rank-art-w').trim(), h: root.getPropertyValue('--rank-art-h').trim() }
+    })
+    expect(`${rankBox!.width}px`).toBe(artSizes.w)
+    expect(`${rankBox!.height}px`).toBe(artSizes.h)
+    expect(portraitBox!.height).toBeCloseTo(46, 1)
   })
 
   test('omits a reservation nobody can still join', async ({ page }) => {

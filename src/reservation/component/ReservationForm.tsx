@@ -3,7 +3,8 @@ import RankImage from '@/shared/components/RankImage'
 import Select from '@/shared/components/Select'
 import useModalDialog from '@/shared/hooks/useModalDialog'
 import TimePickerDialog from '@/reservation/component/TimePickerDialog'
-import { sortRanksDescending } from '@/reservation/reservationLabels'
+import { kstDayLabel, sortRanksDescending } from '@/reservation/reservationLabels'
+import { isBookable, resolveKstStart } from '@/reservation/bookingWindow'
 import { FORM_MATCH_TYPES, MAX_RANKS, type MatchType } from '@/reservation/reservationModel'
 import { rankBands } from '@/shared/rankTiers'
 import { tierHex } from '@/shared/tierColors'
@@ -54,6 +55,11 @@ export default function ReservationForm({ formApi, onClose, onSubmit, notice }: 
     toggleRank, incomplete,
   } = formApi
   const isCreate = !isEditing
+  // Read once per render rather than per reference, so the label and the guard
+  // below cannot disagree about what "now" is.
+  const now = new Date()
+  const startDay = kstDayLabel(resolveKstStart(form.time, now), now)
+  const startBookable = isBookable(form.time, now)
 
   return (
       <ReservationFormDialog onClose={onClose} onSubmit={onSubmit}>
@@ -61,11 +67,16 @@ export default function ReservationForm({ formApi, onClose, onSubmit, notice }: 
           <div><p className="panel-meta mb-1 text-primary-text">{isCreate ? 'NEW MATCH REQUEST' : 'EDIT MATCH REQUEST'}</p><h3 id="reservation-modal-title" className="font-display text-xl font-extrabold tracking-[0.06em] text-txt">{isCreate ? '예약 추가' : '예약 수정'}</h3><p className="modal-description">시간과 매치 조건을 설정해 참가자를 모집하세요.</p></div>
           <button type="button" aria-label="닫기" className="modal-close" onClick={onClose}><X size={16} /></button>
         </div>
+        {/* Which day, not just which hour. The listing runs to the next
+            morning, so a bare 01:00 cannot say whether it means tonight or a
+            day later --- and the backend refuses a time outside that window,
+            so the form says so before submitting rather than after. */}
         <fieldset className="modal-field relative">
           <legend className="field-label">시작 시각</legend>
-          <button type="button" aria-label={`시작 시각 ${form.time}`} aria-haspopup="dialog" aria-expanded={timePickerOpen} onClick={() => { setDraftTime(form.time); setTimePickerOpen((open) => !open) }} className="input-base control-button w-full font-bold">
-            <span>{form.time}</span><Clock3 size={15} aria-hidden="true" className="text-primary" />
+          <button type="button" aria-label={`시작 시각 ${startDay} ${form.time}`} aria-describedby={startBookable ? undefined : 'reservation-time-error'} aria-haspopup="dialog" aria-expanded={timePickerOpen} onClick={() => { setDraftTime(form.time); setTimePickerOpen((open) => !open) }} className="input-base control-button w-full font-bold">
+            <span>{startDay} {form.time}</span><Clock3 size={15} aria-hidden="true" className="text-primary" />
           </button>
+          {!startBookable && <p id="reservation-time-error" className="mt-1 text-xs font-medium text-error">10분 뒤부터 다음 오전 6시 전까지만 예약할 수 있습니다.</p>}
           {timePickerOpen && <TimePickerDialog
             draftTime={draftTime}
             setDraftTime={setDraftTime}

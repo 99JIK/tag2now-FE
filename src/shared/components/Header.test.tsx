@@ -1,7 +1,7 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import ProfileControl from './ProfileControl'
+import PlayerProfileCard from './PlayerProfileCard'
 import { setIdentity } from '@/community/communityApi'
 import { AppError } from '@/shared/util/AppError'
 import { USERNAME_KEY } from '@/shared/util/cookie'
@@ -12,8 +12,8 @@ vi.mock('react-hot-toast', () => ({ default: { error: vi.fn() } }))
 const mockSetIdentity = vi.mocked(setIdentity)
 const mockToastError = vi.mocked(toast.error)
 
-function renderProfile() {
-  return render(<ProfileControl leaderboardEntries={[]} />, { wrapper: MemoryRouter })
+function renderProfile(leaderboardEntries: Parameters<typeof PlayerProfileCard>[0]['leaderboardEntries'] = []) {
+  return render(<PlayerProfileCard leaderboardEntries={leaderboardEntries} />, { wrapper: MemoryRouter })
 }
 
 async function submitName(name: string) {
@@ -22,15 +22,19 @@ async function submitName(name: string) {
   fireEvent.click(screen.getByRole('button', { name: '저장' }))
 }
 
-describe('ProfileControl username save', () => {
+describe('Player profile username save', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // A successful save writes the name to localStorage, and the control reads
+    // A successful save writes the name to localStorage, and the header reads
     // it back on mount — so without this a later test renders already named
     // and never sees the "유저명 설정" button. The cookie line cleared
     // "tag2now_username", which is not the key the app writes.
     localStorage.clear()
     document.cookie = `${USERNAME_KEY}=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`
+  })
+
+  afterEach(() => {
+    document.getElementById('headerProfileSlot')?.remove()
   })
 
   it('keeps the typed name in an open editor when the save fails', async () => {
@@ -132,5 +136,68 @@ describe('ProfileControl username save', () => {
 
     await waitFor(() => expect(mockSetIdentity).toHaveBeenCalledWith('café'))
     expect(mockToastError).not.toHaveBeenCalled()
+  })
+
+  it('shows both character portraits and ranks without visible role or character-name text', () => {
+    document.cookie = `${USERNAME_KEY}=TestPlayer; path=/`
+    renderProfile([{
+      np_id: 'p1',
+      rank: 1,
+      online_name: 'TestPlayer',
+      player_info: {
+        main_char_info: { name: 'Jin', rank_info: { name: 'Destroyer', tier: 'Destroyer' }, wins: 250, losses: 80 },
+        sub_char_info: { name: 'Heihachi', rank_info: { name: 'Vanquisher', tier: 'Vanquisher' }, wins: 180, losses: 60 },
+      },
+    }])
+
+    expect(screen.getByAltText('Jin')).toBeInTheDocument()
+    expect(screen.getByAltText('Heihachi')).toBeInTheDocument()
+    expect(screen.getByAltText('Destroyer')).toBeInTheDocument()
+    expect(screen.getByAltText('Vanquisher')).toBeInTheDocument()
+    expect(screen.getByText('Profile')).toBeInTheDocument()
+    expect(screen.queryByText('My fighter')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '내 정보 보기' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '내 전적 보기' })).not.toBeInTheDocument()
+    expect(screen.queryByText('MAIN')).not.toBeInTheDocument()
+    expect(screen.queryByText('SUB')).not.toBeInTheDocument()
+    expect(screen.queryByText('Jin')).not.toBeInTheDocument()
+    expect(screen.queryByText('Heihachi')).not.toBeInTheDocument()
+    expect(document.querySelectorAll('.char-cell--compact')).toHaveLength(2)
+    const records = document.querySelectorAll('.char-cell--compact .char-cell-record')
+    expect(records).toHaveLength(2)
+    expect(records[0]).toHaveTextContent('250W 80LWR:76%')
+    expect(records[1]).toHaveTextContent('180W 60LWR:75%')
+  })
+
+  it('shares the username editor with the header profile control', async () => {
+    document.cookie = `${USERNAME_KEY}=TestPlayer; path=/`
+    const headerTarget = document.createElement('div')
+    headerTarget.id = 'headerProfileSlot'
+    document.body.append(headerTarget)
+    renderProfile()
+
+    const header = within(headerTarget)
+    await waitFor(() => expect(header.getByText('TestPlayer')).toBeInTheDocument())
+    fireEvent.click(header.getByRole('button', { name: 'TestPlayer 헤더에서 유저명 수정' }))
+
+    expect(header.getByLabelText('유저명 입력')).toHaveValue('TestPlayer')
+    expect(screen.getAllByLabelText('유저명 입력')).toHaveLength(1)
+  })
+
+  // Phones hide the sidebar card and its 내 정보 보기, so the header carries a
+  // way in of its own (CSS shows it only there). It follows the sidebar's rule:
+  // there is a record to open only for a name the leaderboard knows.
+  it('offers 내 정보 in the header, open only for a ranked name', async () => {
+    document.cookie = `${USERNAME_KEY}=TestPlayer; path=/`
+    const headerTarget = document.createElement('div')
+    headerTarget.id = 'headerProfileSlot'
+    document.body.append(headerTarget)
+    const { rerender } = renderProfile()
+
+    const header = within(headerTarget)
+    await waitFor(() => expect(header.getByRole('button', { name: '내 정보' })).toBeDisabled())
+
+    rerender(<PlayerProfileCard leaderboardEntries={[{ np_id: 'p1', rank: 1, online_name: 'TestPlayer', player_info: null }]} />)
+    expect(header.getByRole('button', { name: '내 정보' })).toBeEnabled()
   })
 })

@@ -241,27 +241,31 @@ describe('Reservation', () => {
     expect(screen.getByRole('button', { name: /계급 선택, 현재/ }).querySelectorAll('img')).toHaveLength(20)
   })
 
-  it('defaults the start time to the next whole hour in Seoul', () => {
+  // The first whole hour that clears the backend's ten-minute lead time, not
+  // simply the next one: at 13:55 the 14:00 slot is five minutes away and
+  // would be refused, so the form opens on 15:00 rather than offering it.
+  it('defaults to the first whole hour that clears the lead time', () => {
     vi.setSystemTime(new Date('2026-08-28T04:55:00Z'))  // 13:55 KST
     openReservationModal()
 
-    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 14:00')
+    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 오늘 15:00')
   })
 
   it('defaults to the next hour even moments after the last one struck', () => {
     vi.setSystemTime(new Date('2026-08-28T04:01:00Z'))  // 13:01 KST
     openReservationModal()
 
-    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 14:00')
+    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 오늘 14:00')
   })
 
-  it('stays at 23:00 in the last hour, which has no bookable next hour', () => {
-    // The API takes a time of day with no date, so midnight would resolve to
-    // today's midnight and be rejected as past.
+  // Midnight is a real slot, and the label is what says which midnight. The
+  // window runs to the next 06:00, so at 23:30 the next hour is tomorrow's
+  // 00:00 --- which the day label states rather than leaving to be guessed.
+  it('crosses midnight and says which day it landed on', () => {
     vi.setSystemTime(new Date('2026-08-28T14:30:00Z'))  // 23:30 KST
     openReservationModal()
 
-    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 23:00')
+    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 내일 00:00')
   })
 
   it('offers the hour that is next when the form opens, not when the page loaded', () => {
@@ -269,24 +273,24 @@ describe('Reservation', () => {
     vi.setSystemTime(new Date('2026-08-28T06:20:00Z'))  // 15:20 KST, two hours later
     fireEvent.click(screen.getByRole('button', { name: '+ 예약 추가' }))
 
-    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 16:00')
+    expect(screen.getByRole('button', { name: /시작 시각/ })).toHaveAttribute('aria-label', '시작 시각 오늘 16:00')
   })
 
   it('keeps the previous time on cancel and commits it on confirm', () => {
     openReservationModal()
-    const timeButton = screen.getByRole('button', { name: '시작 시각 21:00' })
+    const timeButton = screen.getByRole('button', { name: '시작 시각 오늘 21:00' })
 
     fireEvent.click(timeButton)
     fireEvent.change(screen.getByLabelText('시간 휠'), { target: { value: '22' } })
     fireEvent.change(screen.getByLabelText('분 휠'), { target: { value: '35' } })
     fireEvent.click(within(screen.getByRole('dialog', { name: '시간 선택' })).getByRole('button', { name: '취소' }))
-    expect(timeButton).toHaveAttribute('aria-label', '시작 시각 21:00')
+    expect(timeButton).toHaveAttribute('aria-label', '시작 시각 오늘 21:00')
 
     fireEvent.click(timeButton)
     fireEvent.change(screen.getByLabelText('시간 휠'), { target: { value: '22' } })
     fireEvent.change(screen.getByLabelText('분 휠'), { target: { value: '35' } })
     fireEvent.click(within(screen.getByRole('dialog', { name: '시간 선택' })).getByRole('button', { name: '선택 완료' }))
-    expect(timeButton).toHaveAttribute('aria-label', '시작 시각 22:35')
+    expect(timeButton).toHaveAttribute('aria-label', '시작 시각 오늘 22:35')
   })
 
   it('creates a rank reservation whose card shows every rank the host picked', async () => {

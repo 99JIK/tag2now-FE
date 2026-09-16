@@ -44,7 +44,7 @@
   .overview-rank-row .mini-char { width: 100%; justify-content: flex-start; }
   .mini-char-rank { max-width: 76px; }
   .mini-char-portrait { height: 44px; }
-  .kpi-card-value { font-size: var(--text-lg); text-align: center; }
+  .kpi-card-value { font-size: var(--text-lg); }
   .app-shell { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
   /* 1fr for the brand, auto for the profile --- not the reverse. Under
      `minmax(0,auto)` the brand column's max is its content width, so it never
@@ -66,7 +66,13 @@
      cost ~68px even shrunk, which at 375px came straight out of the username
      and left it clipped to a few characters. Dropping them buys back enough
      for full-size portraits and a readable name. */
-  .profile-control { justify-self: end; min-width: 0; }
+  /* The header carries the profile below 760px, where the sidebar card is
+     hidden --- and the 내 정보 button appears with it, since that card is where
+     the record is reached from on a wider screen. */
+  .profile-history { display: inline-flex; }
+  .sidebar-nav-card { padding: 0; border: 0; background: transparent; }
+  .app-sidebar > .sidebar-profile-card { display: none; }
+  .profile-control { display: flex; align-items: center; justify-self: end; min-width: 0; }
   .profile-summary { min-width: 0; gap: 6px; }
   .profile-chars { min-width: 0; gap: 6px; padding-left: 6px; }
   .profile-copy { min-width: 0; }
@@ -84,7 +90,10 @@
   /* The 8px gap alone puts the bar inside the iPhone home indicator's 34px
      strip, where the system swallows taps. env() resolves to 0 elsewhere. */
   .app-sidebar { position: fixed; inset: auto 8px calc(8px + env(safe-area-inset-bottom)); z-index: 50; padding: 4px; border-color: color-mix(in srgb, var(--color-surface-tint) 13%, transparent); background: color-mix(in srgb, var(--color-bg-panel) 97%, transparent); backdrop-filter: blur(14px); }
-  .sidebar-heading { display: none; }
+  /* The sidebar is the bottom tab bar at this width, and Live is not a tab.
+     It was already absent from the narrow header before it moved here, so
+     nothing is lost by hiding it rather than finding it a new home. */
+  .sidebar-heading, .sidebar-live { display: none; }
   /* One column per primary tab: a wrapped second row would sit over content. */
   .app-nav { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; overflow: visible; }
   .app-nav::-webkit-scrollbar { display: none; }
@@ -136,6 +145,12 @@
   .field-heading small { display: block; margin-top: 2px; }
   .data-table-wrap { border-radius: 6px; }
   .comment-composer { position: sticky; bottom: 72px; z-index: 10; background: var(--color-bg-panel); }
+  /* One at a time. Stacked, the detail sat below every card in the list, so
+     opening a reservation meant scrolling past all of them to reach it. */
+  .panel:not(.has-selection) .reservation-detail { display: none; }
+  .panel.has-selection .reservation-list,
+  .panel.has-selection .reservation-filter-bar { display: none; }
+  .reservation-detail-back { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 12px; }
   .reservation-detail { position: static; }
   .btn-primary, .btn-ghost, .btn-danger, .refresh-btn { min-height: 44px; }
   .refresh-btn { width: 44px; height: 44px; }
@@ -184,8 +199,13 @@
   .char-cell { width: min(100%, 104px); gap: 6px; }
   .char-cell-rank { height: 24px; }
   .ranking-table .char-td img { max-width: 100%; object-fit: contain; }
-  .history-backdrop { align-items: flex-start; padding: 8px; }
-  .history-dialog { margin-block: auto; }
+  /* A margin of page stays visible around the dialog, so it reads as a popup
+     rather than a screen of its own. */
+  .history-backdrop { align-items: center; padding: 24px 16px; }
+  /* Capped to the screen, with the header and period picker pinned and only
+     the body scrolling --- the loaded record once ran past the screen and took
+     the whole backdrop with it. */
+  .history-dialog { display: flex; max-height: calc(100dvh - 48px); flex-direction: column; margin-block: auto; }
   .history-header { min-height: 72px; padding: 12px; }
   .history-title-group div > p:last-child { display: none; }
   .history-toolbar { align-items: stretch; flex-direction: column; padding: 8px 12px; }
@@ -193,13 +213,19 @@
   .history-character-pair { margin-left: auto; }
   .history-period { width: 100%; }
   .history-period button { min-height: 38px; flex: 1; }
-  .history-body { padding: 12px; }
+  .history-body { min-height: 0; flex: 1 1 auto; overflow-y: auto; padding: 12px; }
   .history-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .history-content-grid { grid-template-columns: 1fr; }
   .history-section { min-height: 0; }
   .history-clock { min-height: 220px; flex: none; }
   .activity-insight { grid-template-columns: minmax(148px,.85fr) minmax(138px,1fr); }
   .history-empty { min-height: 100px; }
+}
+
+/* The narrowest phones drop the button's label for its icon. */
+@media (max-width: 400px) {
+  .profile-history { width: 30px; justify-content: center; padding: 0; }
+  .profile-history-label { display: none; }
 }
 
 @media (max-width: 420px) {

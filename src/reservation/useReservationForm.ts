@@ -1,3 +1,4 @@
+import { defaultStartTime } from '@/reservation/bookingWindow'
 import { useState } from 'react'
 import { sortRanksDescending } from '@/reservation/reservationLabels'
 import {
@@ -7,21 +8,9 @@ import type { CreateReservationInput } from '@/reservation/reservationApi'
 
 export type FormState = { time: string; type: MatchType; ranks: string[]; capacity: string; memo: string }
 
-const kstHourFormat = new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Seoul', hour: '2-digit', hour12: false })
 
-/** The next whole hour in Seoul, which is where a host most likely wants to start.
- *
- * Rounding down instead would always land in the past and be rejected by the
- * backend's ten-minute lead time. The 23:00 hour has no valid next hour at all —
- * the API takes a time of day with no date, so midnight resolves to *today*
- * midnight — and stays at 23:00 rather than offering a slot that cannot be booked.
- */
-export function nextHourInSeoul(now = new Date()): string {
-  const hour = Number(kstHourFormat.format(now))
-  return `${String(Math.min(hour + 1, 23)).padStart(2, '0')}:00`
-}
 
-export const blankForm = (): FormState => ({ time: nextHourInSeoul(), type: '랭크매치', ranks: [], capacity: '1', memo: '' })
+export const blankForm = (): FormState => ({ time: defaultStartTime(new Date()), type: '랭크매치', ranks: [], capacity: '1', memo: '' })
 
 /** Reverse of the create mapping, so editing starts from what the host posted. */
 export function toForm(reservation: Reservation): FormState {
@@ -47,7 +36,7 @@ export default function useReservationForm() {
   const [open, setOpen] = useState(false)
   const [rankPickerOpen, setRankPickerOpen] = useState(false)
   const [timePickerOpen, setTimePickerOpen] = useState(false)
-  const [draftTime, setDraftTime] = useState(nextHourInSeoul)
+  const [draftTime, setDraftTime] = useState(() => defaultStartTime(new Date()))
 
   const closePickers = () => { setRankPickerOpen(false); setTimePickerOpen(false) }
 

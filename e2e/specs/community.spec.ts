@@ -30,12 +30,16 @@ test.describe('Community', () => {
     await requestPromise
   })
 
+  // The tiles are named by the character alone; the group they sit in is what
+  // says they filter ("캐릭터로 거르기"), so repeating "Filter by" on all
+  // sixty would be read out on every one of them.
   test('picking two characters filters by that team', async ({ page }) => {
-    await page.getByRole('button', { name: 'Filter by Jin', exact: true }).click()
+    const picker = page.getByRole('group', { name: '캐릭터로 거르기' })
+    await picker.getByRole('button', { name: 'Jin', exact: true }).click()
     const requestPromise = page.waitForRequest((req) =>
       req.url().includes('/api/community/posts') && new URL(req.url()).searchParams.getAll('characters').length === 2
     )
-    await page.getByRole('button', { name: 'Filter by Kazuya', exact: true }).click()
+    await picker.getByRole('button', { name: 'Kazuya', exact: true }).click()
     expect(new URL((await requestPromise).url()).searchParams.getAll('characters')).toEqual(['Jin', 'Kazuya'])
   })
 

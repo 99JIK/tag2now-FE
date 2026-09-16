@@ -4,13 +4,12 @@ import Leaderboard from "@/shared/Leaderboard";
 import Stats from "@/stat/Stats"
 import Header from "@/shared/components/Header";
 import LiveBadge from "@/shared/components/LiveBadge";
-import ProfileControl from "@/shared/components/ProfileControl";
+import PlayerProfileCard from '@/shared/components/PlayerProfileCard'
 import Footer from "@/shared/components/Footer";
 import PatchNotes from "@/shared/components/PatchNotes";
 import { GROUP_ORDER, formatGroupName } from '@/config/tabConfig'
 import { firstRoomPath, isRoomTab as isRoomTabKey, pathOf } from '@/config/routes'
 import useActiveTab from '@/shared/hooks/useActiveTab'
-import useMediaQuery from '@/shared/hooks/useMediaQuery'
 import useLeaderboard from "@/shared/hooks/useLeaderboard";
 import useRooms from "@/match/useRooms";
 import useReservations, { countOpen } from "@/reservation/useReservations";
@@ -30,12 +29,6 @@ import {
   Trophy,
 } from 'lucide-react'
 
-/** The one breakpoint this file has to know about, because at it the sidebar
- * stops being a column and becomes a six-slot bottom bar — there is no room
- * above the nav for the profile, so it goes back in the header. Kept in step
- * with the `max-width: 760px` block in `styles/responsive.css` by hand. */
-const COMPACT_LAYOUT = '(max-width: 760px)'
-
 // Before the first successful load the count is unknown, not zero - "(0)" would
 // assert there are no rooms while the fetch is still in flight or has failed.
 // Once rooms have loaded, a group the payload omits really is empty.
@@ -47,7 +40,6 @@ function roomCountLabel(rooms: Room[] | undefined, loaded: boolean): string {
 export default function App() {
   const navigate = useNavigate()
   const activeTab = useActiveTab()
-  const compact = useMediaQuery(COMPACT_LAYOUT)
   const lb = useLeaderboard()
   const rooms = useRooms()
   // One reservation poll for the whole app, shared with the panel. The rate
@@ -59,6 +51,12 @@ export default function App() {
   )
 
   const groups = rooms.data?.groups ?? {}
+  // Everyone currently in a room, so the profile card can say whether you
+  // are one of them.
+  const roomUsers = useMemo(
+    () => Object.values(groups).flatMap(group => group.flatMap(room => room.users ?? [])),
+    [groups],
+  )
   const roomsLoaded = rooms.data !== null
   // Room tabs are part of the fixed layout: they render before rooms load and
   // survive a failed fetch, so the tab strip never shifts under the user.
@@ -130,18 +128,17 @@ export default function App() {
     <div className="app-shell">
       <a className="skip-link" href="#mainContent">본문으로 건너뛰기</a>
       <PatchNotes />
-      <Header>{compact && <ProfileControl leaderboardEntries={lb.data?.entries} />}</Header>
+      <Header />
       <div className="app-layout">
         <aside className="app-sidebar" aria-label="서비스 메뉴">
-          {/* Live first, then who you are, then where you can go. Only one
-              ProfileControl is ever mounted — a second copy would hold a second
-              draft of the username being edited. */}
-          {!compact && (
-            <div className="sidebar-profile">
-              <LiveBadge totalUsers={rooms.data?.totalUsers} />
-              <ProfileControl leaderboardEntries={lb.data?.entries} />
-            </div>
-          )}
+          {/* Live above the nav, with the badges it belongs beside — not in the
+              header, where it was a lone figure between the wordmark and the
+              profile, belonging to neither. */}
+          <LiveBadge totalUsers={rooms.data?.totalUsers} />
+          {/* One PlayerProfileCard renders both surfaces — this card and, through
+              a portal, the header slot that replaces it on a phone — so the
+              username being edited is one piece of state rather than two. */}
+          <div className="sidebar-nav-card">
           <div className="sidebar-heading">
             <span>Navigation</span>
             <ChevronRight size={14} aria-hidden="true" />
@@ -186,6 +183,8 @@ export default function App() {
               })()
             ))}
           </nav>
+          </div>
+          <PlayerProfileCard leaderboardEntries={lb.data?.entries} roomUsers={roomUsers} />
         </aside>
 
         <main id="mainContent" className="app-main">

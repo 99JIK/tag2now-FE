@@ -12,7 +12,7 @@ import { statusBody } from '@/shared/util/panelStatus'
 import { ListSkeleton } from '@/shared/components/Skeleton'
 import ConfirmDialog from '@/shared/components/ConfirmDialog'
 import useConfirm from '@/shared/hooks/useConfirm'
-import { CalendarPlus, Check, Filter, LogIn, Pencil, Plus, Trash2, UserMinus, X } from 'lucide-react'
+import { CalendarPlus, Check, ChevronLeft, Filter, LogIn, Pencil, Plus, Trash2, UserMinus, X } from 'lucide-react'
 import ToggleGroup from '@/shared/components/ToggleGroup'
 import { reservationPath } from '@/config/routes'
 import { sortRanksDescending } from '@/reservation/reservationLabels'
@@ -159,7 +159,11 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
     : null
 
   return (
-    <section className="panel relative overflow-hidden" aria-label="예약">
+    // `has-selection` is what lets a phone show the list and the detail one at
+    // a time. Keyed off the URL rather than off `selectedReservation`, which
+    // falls back to the first row so the desktop's detail column is never
+    // empty --- that fallback is not a selection the reader made.
+    <section className={`panel relative overflow-hidden${selectedId != null && selectedReservation ? ' has-selection' : ''}`} aria-label="예약">
       <div className="absolute inset-0 pointer-events-none opacity-25 [background-image:linear-gradient(rgba(230,57,70,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(230,57,70,0.04)_1px,transparent_1px)] [background-size:24px_24px]" />
       {confirmDialog.request && <ConfirmDialog {...confirmDialog} request={confirmDialog.request} />}
       <div className="relative">
@@ -208,7 +212,7 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
         {listStatus && <div className="mt-4">{listStatus}</div>}
 
         {!listStatus && <div className="reservation-content-grid grid gap-4 xl:grid-cols-[minmax(0,1.55fr)_minmax(280px,0.8fr)]">
-          <div className="space-y-3">
+          <div className="reservation-list space-y-3">
             {reservationsByTime.map(([time, reservationsAtTime]) => (
               <section key={time} className="reservation-group" aria-label={`${time} 예약`}>
                 <div className="mb-3 flex items-baseline gap-3 border-b border-border pb-2">
@@ -236,6 +240,9 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
             // rather than letting the host find out by being rejected.
             const frozen = selectedReservation.joined > 0
             return <aside className={`reservation-detail ${selectedReservation.status === 'full' ? 'is-full' : ''}`} aria-label="선택한 예약 상세">
+              {/* Hidden on the roomy layout, where the list is still beside
+                  this and there is nothing to go back to. */}
+              <button type="button" className="reservation-detail-back btn-ghost" onClick={() => navigate('/reservation')}><ChevronLeft size={15} aria-hidden="true" /> 목록으로</button>
               <div className="flex items-start justify-between gap-3"><div><p className="panel-meta mb-1">선택한 예약</p><p className="font-display text-3xl font-extrabold text-txt">{selectedReservation.time}</p></div><span className={`border px-2 py-1 text-xs font-bold tracking-[0.12em] ${availability.className}`}>{availability.label}</span></div>
               <div className="mt-4 space-y-3 border-y border-border py-4 text-sm"><p className="flex items-center justify-between"><span className="text-txt-dim">예약자</span><strong className="text-txt">{selectedReservation.host}</strong></p>{selectedReservation.ranks.length > 0 && <div className="flex items-start justify-between gap-3"><span className="shrink-0 text-txt-dim">보유 계급</span><RankSummary ranks={selectedReservation.ranks} imageClassName="h-8" className="flex-1 justify-end" /></div>}<p className="flex items-center justify-between"><span className="text-txt-dim">종류</span><strong className="text-primary-text">{selectedReservation.type}</strong></p></div>
               <section className="reservation-roster" aria-label="참가자 명단">

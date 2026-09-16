@@ -108,7 +108,10 @@ test.describe('Navigation', () => {
     await expect(page.getByRole('tab', { name: '홈' })).toHaveAttribute('aria-selected', 'false')
   })
 
-  test('the header exposes the username and its editor', async ({ page }) => {
+  // Phones only: the sidebar card is the profile on a wider screen, and showing
+  // the header control as well put two edit pencils for one username on screen.
+  test('the header exposes the username and its editor', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'The sidebar card carries the editor on desktop.')
     await signInAs(page, 'KingOfIronFist')
     await skipPatchNotes(page)
     await page.reload()
@@ -194,18 +197,18 @@ test.describe('Navigation', () => {
       expect(rankBox).not.toBeNull()
       expect(recordBox).not.toBeNull()
       expect(portraitBox).not.toBeNull()
-      expect(rankBox!.x + rankBox!.width).toBeLessThan(portraitBox!.x)
-      expect(portraitBox!.x + portraitBox!.width).toBeLessThan(recordBox!.x)
-      const leftSpace = rankBox!.x - cardBox!.x
-      const rightSpace = cardBox!.x + cardBox!.width - (recordBox!.x + recordBox!.width)
-      // 10, not 8: CI's Linux fonts set the record text ~1px wider than
-      // Windows and measured 9. A card that has lost its balance is off by far
-      // more than a glyph's rounding.
-      expect(Math.abs(leftSpace - rightSpace)).toBeLessThanOrEqual(10)
-      expect(rankBox!.width).toBeLessThanOrEqual(56)
+      // Portrait first, then the rank over the record beside it --- the same
+      // arrangement CharCell uses in the leaderboard table, which is the point
+      // of reusing it. The rank used to lead here, which made the one cell that
+      // is meant to look familiar the one that did not.
+      expect(portraitBox!.x + portraitBox!.width).toBeLessThanOrEqual(rankBox!.x)
+      expect(portraitBox!.x + portraitBox!.width).toBeLessThanOrEqual(recordBox!.x)
+      // The rank sits above the record, not beside it.
+      expect(rankBox!.y + rankBox!.height).toBeLessThanOrEqual(recordBox!.y)
+      // Everything stays inside the card.
+      expect(portraitBox!.x).toBeGreaterThanOrEqual(cardBox!.x)
+      expect(recordBox!.x + recordBox!.width).toBeLessThanOrEqual(cardBox!.x + cardBox!.width + 1)
       expect(rankBox!.height).toBeLessThan(portraitBox!.height)
-      expect(portraitBox!.width).toBe(52)
-      expect(portraitBox!.height).toBe(52)
     }
   })
 })
