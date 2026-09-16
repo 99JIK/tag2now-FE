@@ -1,0 +1,254 @@
+/* Every viewport override, last so it wins.
+
+   Kept as one file rather than distributed into the feature files above: these
+   rules currently rely on being the last thing in the stylesheet, and moving a
+   feature's media query next to its base rules would let a later feature's
+   unlayered rule outrank it. Distributing them is a real change, not a move,
+   and wants visual baselines that this repository does not keep. */
+
+@media (max-width: 760px) {
+  .kpi-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  /* Three cards into two columns leaves the last one beside a hole. It takes
+     the full width instead, which is also where the longest hint sits. */
+  .kpi-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .overview-grid { grid-template-columns: minmax(0,1fr); }
+  /* At ~290-320px a single row cannot hold the name and two rank banners side
+     by side without shortening the name to a few characters. So the row wraps:
+     rank number, name and figure take the top line at full width, and the two
+     characters sit beneath them. Nothing is dropped and nothing is truncated. */
+  .overview-rank-head { display: none; }
+  /* Placed by area here, so the desktop column tracks must not leak in. */
+  .overview-rank-row {
+    min-height: 0;
+    padding: 6px 8px;
+    grid-template-areas: "pos name name detail" "pos main sub .";
+    grid-template-columns: 18px minmax(0,1fr) minmax(0,1fr) auto;
+    gap: 4px 6px;
+  }
+  /* With no detail cell the trailing track has nothing to size to, and left
+     in place it squeezed the two portraits to half their width. Drop it. */
+  .overview-rank-list.has-no-detail .overview-rank-row {
+    grid-template-areas: "pos name name" "pos main sub";
+    grid-template-columns: 18px minmax(0,1fr) minmax(0,1fr);
+  }
+  /* The name sits on a 25px line, under the 44px the rest of the UI gives a
+     touch target. Vertical padding is what grows it: a positioned ::after
+     would be clipped away by the overflow the ellipsis needs, and the row is
+     tall enough to absorb the padding without changing its own height. */
+  .overview-rank-btn { padding-block: 10px; margin-block: -10px; }
+  .overview-rank-pos { grid-area: pos; align-self: center; }
+  .overview-rank-name { grid-area: name; }
+  .overview-rank-detail { grid-area: detail; }
+  .overview-rank-row .mini-char:nth-of-type(1) { grid-area: main; }
+  .overview-rank-row .mini-char:nth-of-type(2) { grid-area: sub; }
+  .overview-rank-row .mini-char { width: 100%; justify-content: flex-start; }
+  .mini-char-rank { max-width: 76px; }
+  .mini-char-portrait { height: 44px; }
+  .kpi-card-value { font-size: var(--text-lg); text-align: center; }
+  .app-shell { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
+  /* 1fr for the brand, auto for the profile --- not the reverse. Under
+     `minmax(0,auto)` the brand column's max is its content width, so it never
+     yielded and the profile chip painted over the wordmark: 44.5px of overlap
+     at 320px, and 29.2px at 375px once a username reached the 140px cap. The
+     profile is the fixed-size side (portraits and a capped name), so it takes
+     `auto` and the brand absorbs what is left. */
+  /* 68px, not the desktop 56px: the profile is back in the header here, and
+     its 34px portrait plus padding is what sets the floor. */
+  .app-header { grid-template-columns: minmax(0, 1fr) minmax(0, auto); gap: 8px; min-height: 68px; padding: 8px 12px; }
+  /* The wordmark is the one thing here that can lose characters silently, so
+     it clips rather than overflowing its column. min-width:0 is needed on the
+     lockup *and* on its inner text wrapper: a flex item defaults to
+     min-width:auto, which is its content width, so without both the column
+     refuses to shrink and the overlap survives the 1fr. */
+  .brand-lockup { min-width: 0; }
+  .brand-lockup h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Both portraits stay on mobile; the rank banners and W/L do not. Two ranks
+     cost ~68px even shrunk, which at 375px came straight out of the username
+     and left it clipped to a few characters. Dropping them buys back enough
+     for full-size portraits and a readable name. */
+  .profile-control { justify-self: end; min-width: 0; }
+  .profile-summary { min-width: 0; gap: 6px; }
+  .profile-chars { min-width: 0; gap: 6px; padding-left: 6px; }
+  .profile-copy { min-width: 0; }
+  /* Portraits only. The whole meta column goes rather than its children one by
+     one: left in place it is a zero-width flex item that still pays the gap. */
+  .profile-chars .char-cell { width: auto; min-width: 0; margin-inline: 0; padding: 0; background: transparent; }
+  .profile-chars .char-cell-meta { display: none; }
+  .profile-chars .char-cell-portrait { height: 34px; }
+  .profile-name { max-width: 140px; padding: 0 6px; }
+  .profile-copy small { display: none; }
+  .brand-mark { width: 32px; height: 32px; }
+  .brand-lockup h1 { font-size: var(--text-sm); }
+  .app-layout { display: block; width: 100%; margin-top: 0; }
+  .app-main { padding: 12px 8px 0; }
+  /* The 8px gap alone puts the bar inside the iPhone home indicator's 34px
+     strip, where the system swallows taps. env() resolves to 0 elsewhere. */
+  .app-sidebar { position: fixed; inset: auto 8px calc(8px + env(safe-area-inset-bottom)); z-index: 50; padding: 4px; border-color: color-mix(in srgb, var(--color-surface-tint) 13%, transparent); background: color-mix(in srgb, var(--color-bg-panel) 97%, transparent); backdrop-filter: blur(14px); }
+  .sidebar-heading { display: none; }
+  /* One column per primary tab: a wrapped second row would sit over content. */
+  .app-nav { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 2px; overflow: visible; }
+  .app-nav::-webkit-scrollbar { display: none; }
+  .app-nav .tab-btn { min-width: 0; min-height: 52px; flex-direction: column; justify-content: center; gap: 2px; padding: 4px 1px; font-size: var(--text-3xs); }
+  .app-nav .nav-badge { position: absolute; top: 3px; right: 3px; min-width: 20px; height: 20px; margin: 0; padding-inline: 5px; font-size: var(--text-3xs); line-height: 1; }
+  /* The compact column has no room for the active fill to read, so the bar
+     is the active indicator here. On desktop the fill does that job and a
+     right-edge marker would sit under .nav-badge, so there is no ::after. */
+  .app-nav .tab-btn.active::after { content: ''; position: absolute; inset: 2px auto auto 50%; width: 14px; height: 2px; border-radius: 6px; background: var(--color-primary); transform: translateX(-50%); }
+  .panel { min-height: 60vh; border-radius: 6px; }
+  .room-tabs { align-items: stretch; gap: 4px; padding: 4px; }
+  .room-tabs-label { display: none; }
+  .room-tabs > div { width: 100%; }
+  .room-tabs button { min-height: 40px; flex: 1; justify-content: center; }
+  .section-toolbar { align-items: flex-start; }
+  .section-title p { display: none; }
+  .chart-grid { grid-template-columns: 1fr; }
+  .filter-bar { align-items: flex-start; flex-direction: column; }
+  .reservation-filter-bar { align-items: stretch; flex-direction: column; gap: 8px; padding: 12px 0 12px; }
+  .reservation-filter-heading small { display: none; }
+  .reservation-filter-controls .toggle-group { flex: 1 1 auto; }
+  .reservation-filter-controls .toggle-group-option { min-height: 38px; flex: 1 1 0; padding: 0 8px; }
+  .reservation-content-grid { margin-top: 12px; }
+  .community-filter-bar { align-items: stretch; flex-direction: column; gap: 8px; padding: 12px 0 12px; }
+  .community-filter-heading small { display: none; }
+  .community-filter-controls, .community-filter-controls .segmented-control { width: 100%; min-width: 0; }
+  .community-filter-controls .segmented-control { display: flex; }
+  .community-filter-controls .segmented-control button { min-width: 0; flex: 1; }
+  /* Two lines below 760px: the title needs the whole width, so the byline and
+     the counts drop underneath it. The tag column stays put and spans both,
+     which is what keeps the left edge straight. */
+  .post-row {
+    grid-template-columns: 62px minmax(0, 1fr) auto auto;
+    grid-template-areas: "tags title title title" "tags author stats time";
+    gap: 4px 8px;
+    padding: 8px;
+  }
+  .post-row-tags { grid-area: tags; align-self: center; }
+  .post-row-title { grid-area: title; white-space: normal; overflow-wrap: anywhere; }
+  .post-row .author-badge { grid-area: author; }
+  .post-row-stats { grid-area: stats; }
+  .post-row-time { grid-area: time; }
+  .author-badge-rank { height: 14px; }
+  /* The grid wraps now, so the 680px floor that used to force a sideways
+     scroll here has nothing left to do. */
+  .form-section { padding: 8px; }
+  .writing-form { padding: 12px; }
+  .field-heading { display: block; }
+  .field-heading small { display: block; margin-top: 2px; }
+  .data-table-wrap { border-radius: 6px; }
+  .comment-composer { position: sticky; bottom: 72px; z-index: 10; background: var(--color-bg-panel); }
+  .reservation-detail { position: static; }
+  .btn-primary, .btn-ghost, .btn-danger, .refresh-btn { min-height: 44px; }
+  .refresh-btn { width: 44px; height: 44px; }
+  .segmented-control button { min-height: 42px; }
+  .reservation-modal { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); width: min(720px,100%); max-height: none; padding: 16px; }
+  .reservation-modal-header { order: -1; }
+  .reservation-modal-actions { position: sticky; bottom: -14px; z-index: 3; margin: 2px -16px -16px; padding: 8px 16px; background: var(--color-bg-sunken); }
+  .reservation-modal-actions > button { flex: 1; }
+  .rank-picker-panel .grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .ranking-table tbody tr { height: 54px; }
+  /* The rank art and the VS column are fixed-width, so at 375px they took 59%
+     of the table and left each name 66px — narrower than the .player-btn
+     inside it, which then spilled past the wrap's hidden overflow and lost its
+     tail. Shrinking the art and the type buys the two name columns the room
+     they need; anything still too long now ellipsizes inside the cell. */
+  .match-table .tbl-td img { min-width: 0; max-width: 100%; height: 28px; }
+  .match-table col:first-child { width: 84px; }
+  .match-table col:nth-child(3) { width: 36px; }
+  .match-table .player-name { max-width: none; padding-inline: 4px; font-size: var(--text-13); }
+  .match-table .player-btn { display: block; width: 100%; overflow: hidden; padding-inline: 4px; text-overflow: ellipsis; white-space: nowrap; }
+  .match-table .vs-label { font-size: var(--text-xs); }
+  .ranking-table .player-btn { width: 100%; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { width: 11%; }
+  .leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { width: 33%; }
+  .leaderboard-table th:nth-child(3), .leaderboard-table td:nth-child(3), .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { width: 28%; }
+  .weekly-ranking-table th:nth-child(1), .weekly-ranking-table td:nth-child(1) { width: 13%; }
+  .weekly-ranking-table th:nth-child(2), .weekly-ranking-table td:nth-child(2) { width: 35%; }
+  .weekly-ranking-table th:nth-child(3), .weekly-ranking-table td:nth-child(3) { width: 16%; }
+  .weekly-ranking-table th:nth-child(5), .weekly-ranking-table td:nth-child(5) { width: 36%; }
+  .weekly-ranking-table th:nth-child(4), .weekly-ranking-table td:nth-child(4), .weekly-ranking-table th:nth-child(6), .weekly-ranking-table td:nth-child(6) { display: none; }
+  .ranking-table .char-td { min-width: 0; max-width: none; overflow: hidden; }
+  /* The raw W/L does not fit beside the portrait and banner at 393px — it was
+     clipping mid-number, which reads as a rendering fault rather than a
+     truncation. The win rate is the figure people compare, so it is the one
+     that stays; the full record is in the player's history panel. */
+  .char-cell-wl { display: none; }
+  /* The totals column is the first thing to go at 393px: the same numbers are
+     in each character's cell, and the sort controls stay reachable. */
+  .lb-total-col { display: none; }
+  .lb-picker { padding: 6px; }
+  .lb-sort button { padding: 0 8px; }
+  .char-cell { gap: 6px; }
+  .char-cell-portrait { height: 40px; }
+  /* The raw W/L is hidden below, so the block only has to hold the banner and
+     the win rate. */
+  .char-cell { width: min(100%, 104px); gap: 6px; }
+  .char-cell-rank { height: 24px; }
+  .ranking-table .char-td img { max-width: 100%; object-fit: contain; }
+  .history-backdrop { align-items: flex-start; padding: 8px; }
+  .history-dialog { margin-block: auto; }
+  .history-header { min-height: 72px; padding: 12px; }
+  .history-title-group div > p:last-child { display: none; }
+  .history-toolbar { align-items: stretch; flex-direction: column; padding: 8px 12px; }
+  .history-rank-summary { width: 100%; }
+  .history-character-pair { margin-left: auto; }
+  .history-period { width: 100%; }
+  .history-period button { min-height: 38px; flex: 1; }
+  .history-body { padding: 12px; }
+  .history-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .history-content-grid { grid-template-columns: 1fr; }
+  .history-section { min-height: 0; }
+  .history-clock { min-height: 220px; flex: none; }
+  .activity-insight { grid-template-columns: minmax(148px,.85fr) minmax(138px,1fr); }
+  .history-empty { min-height: 100px; }
+}
+
+@media (max-width: 420px) {
+  .history-clock { min-height: 330px; }
+  .activity-insight { grid-template-columns: 1fr; gap: 2px; }
+  .activity-ring-wrap { width: 166px; }
+  .activity-summary { padding: 12px 4px 2px; border-top: 1px solid var(--color-border); border-left: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* Participant slots share the reservation panel's dark surfaces and coral accents. */
+.reservation-roster { margin-top: 16px; padding: 12px; border: 1px solid var(--color-border); border-radius: 8px; background: color-mix(in srgb, var(--color-shade) 12%, transparent); }
+.reservation-roster-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+.reservation-roster-heading h4 { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--color-txt); font-size: var(--text-sm); font-weight: var(--weight-display); }
+.reservation-roster-count { padding: 3px 7px; border: 1px solid var(--color-primary-dim); border-radius: 5px; background: color-mix(in srgb, var(--color-primary) 8%, transparent); color: var(--color-primary-text); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+.reservation-roster-helper { color: var(--color-txt-dim); font-size: var(--text-2xs); white-space: nowrap; }
+.reservation-roster-message { margin: 0 0 10px; color: var(--color-txt-dim); font-size: var(--text-xs); line-height: 1.6; }
+.reservation-roster-message:last-child { margin-bottom: 0; }
+.reservation-roster-slots { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.reservation-roster-slot { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 12px 10px; border: 1px solid var(--color-primary-dim); border-radius: 7px; background: color-mix(in srgb, var(--color-primary) 4%, transparent); }
+.reservation-roster-avatar { display: flex; flex: 0 0 38px; width: 38px; height: 42px; align-items: center; justify-content: center; border: 1px solid var(--color-primary-dim); border-radius: 9px; background: color-mix(in srgb, var(--color-primary) 12%, transparent); color: var(--color-primary-text); font-size: var(--text-19); font-weight: var(--weight-max); }
+.reservation-roster-person { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 5px; }
+.reservation-roster-person strong { color: var(--color-txt); font-size: var(--text-13); line-height: 1.5; font-weight: var(--weight-strong); overflow-wrap: anywhere; }
+.reservation-roster-status { display: flex; align-items: center; gap: 5px; color: var(--color-primary-text); font-size: var(--text-2xs); line-height: 1.4; }
+.reservation-roster-status svg { padding: 2px; width: 15px; height: 15px; border-radius: 50%; background: var(--color-primary); color: var(--color-bg-deep); }
+.reservation-roster-slot.is-empty { border-style: dashed; border-color: var(--color-border); background: transparent; }
+.reservation-roster-slot.is-empty .reservation-roster-avatar { border-color: var(--color-border); background: var(--color-bg-row); color: var(--color-txt-dim); }
+.reservation-roster-slot.is-empty strong { color: var(--color-txt-dim); font-weight: var(--weight-label); }
+.reservation-roster-waiting { color: var(--color-txt-dim); font-size: var(--text-2xs); line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; }
+
+
+.reservation-roster-position { display: flex; flex: 0 0 auto; align-items: center; justify-content: center; color: var(--color-primary-text); }
+.reservation-roster-position > strong { font-size: var(--text-17); font-weight: var(--weight-max); font-variant-numeric: tabular-nums; }
+.reservation-roster-inline { display: flex; flex: 1; align-items: center; gap: 6px; min-width: 0; }
+.reservation-roster-best-rank { display: flex; flex-shrink: 0; align-items: center; min-width: 0; }
+.reservation-roster-inline .reservation-roster-status { flex-shrink: 0; white-space: nowrap; gap: 3px; font-size: var(--text-3xs); }
+.reservation-roster-slot.is-occupied { padding: 6px; gap: 6px; }
+.reservation-roster-name { flex: 1; min-width: 0; color: var(--color-txt); font-size: var(--text-xs); font-weight: var(--weight-strong); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.reservation-roster-rank-image { max-width: 92px; }
+
+/* Attached videos follow the community board's black/red panel styling. */
+.youtube-video { margin: 1rem 0; overflow: hidden; border: 1px solid var(--color-border-light); border-radius: 8px; background: var(--color-bg-embed); }
+.youtube-video-heading { display: flex; align-items: center; gap: 0.5rem; padding: 0.65rem 0.85rem; color: var(--color-txt-dim); font-size: var(--text-xs); font-weight: var(--weight-strong); }
+.youtube-video-heading svg { color: var(--color-error); }
+.youtube-video iframe { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; }
+.youtube-video-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 0.85rem; color: var(--color-txt-dim); font-size: var(--text-xs); }
+.youtube-video-footer a { display: inline-flex; align-items: center; gap: 0.35rem; color: var(--color-primary-text); }
+.youtube-video-footer a:hover { color: white; }
+.youtube-video-footer a:focus-visible { outline: 2px solid var(--color-primary-text); outline-offset: 3px; }
