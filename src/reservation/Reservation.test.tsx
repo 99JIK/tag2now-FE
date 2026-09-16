@@ -175,7 +175,7 @@ describe('Reservation', () => {
     expect(screen.getByLabelText('모집 인원')).toBeInTheDocument()
   })
 
-  it('shows all 36 ranks with higher rows above and higher ranks on the right', () => {
+  it('shows all 43 ranks grouped by band, strongest band and rank first', () => {
     openReservationModal()
     fireEvent.click(screen.getByRole('button', { name: /계급 선택/ }))
 
@@ -186,9 +186,31 @@ describe('Reservation', () => {
       .filter((button) => button.getAttribute('aria-pressed') !== null)
     const imageNames = Array.from(picker!.querySelectorAll('button[aria-pressed] img')).map((image) => image.getAttribute('alt'))
 
-    expect(tiles).toHaveLength(36)
-    expect(imageNames.slice(0, 4)).toEqual(['Suzaku', 'Fujin', 'Raijin', 'Yaksa'])
-    expect(imageNames.slice(-4)).toEqual(['Beginner', '9th kyu', '8th kyu', '7th kyu'])
+    expect(tiles).toHaveLength(43)
+    // 황금단 opens the picker, strongest first — top-left is the highest rank
+    // in the game, because Korean reads left to right.
+    expect(imageNames.slice(0, 2)).toEqual(['True Tekken God', 'Tekken God'])
+    // 보라단, then 파랑단 — five ranks, so the weakest wraps to a second row.
+    expect(imageNames.slice(2, 5)).toEqual(['Tekken Emperor', 'Tekken Lord', 'Emperor'])
+    expect(imageNames.slice(5, 10)).toEqual(['Toshin', 'Majin', 'Yaksa', 'Raijin', 'Fujin'])
+    // 숫자급 closes it, weakest last.
+    expect(imageNames.slice(-2)).toEqual(['9th kyu', 'Beginner'])
+  })
+
+  it('labels every band and never splits one across a row', () => {
+    openReservationModal()
+    fireEvent.click(screen.getByRole('button', { name: /계급 선택/ }))
+
+    const picker = document.getElementById('reservation-rank-picker')!
+    const bands = [...picker.querySelectorAll('.rank-band-label')].map((el) => el.textContent)
+    expect(bands).toEqual(['황금단', '보라단', '파랑단', '빨강단', '주황단', '노랑단', '녹단', '액자단', '숫자단', '숫자급'])
+
+    // Each band's own grid holds only its own ranks — the whole point of the
+    // grouping, and what a flat chunk-by-four could not promise.
+    const perBand = [...picker.querySelectorAll('.rank-band-grid')]
+      .map((grid) => grid.querySelectorAll('button[aria-pressed]').length)
+    expect(perBand).toEqual([2, 3, 5, 4, 4, 4, 4, 4, 3, 10])
+    expect(perBand.reduce((a, b) => a + b, 0)).toBe(43)
   })
 
   it('shows selected rank images from highest to lowest in the collapsed control', () => {
@@ -389,38 +411,49 @@ describe('Reservation', () => {
     return screen.getByRole('complementary', { name: '선택한 예약 상세' })
   }
 
-  it('deletes the reservation once the host confirms', async () => {
+  // The confirmation is the app's own dialog rather than window.confirm, so
+  // these drive it the way a user does instead of stubbing a global.
+  const confirmDialog = () => screen.getByRole('alertdialog', { name: '예약을 삭제할까요?' })
+
+  it('asks before deleting rather than deleting on the first click', async () => {
     vi.mocked(isOwner).mockReturnValue(true)
-    vi.mocked(cancelReservation).mockResolvedValue(undefined)
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
     const detail = await openDetail()
 
     fireEvent.click(within(detail).getByRole('button', { name: '예약 삭제' }))
 
+    expect(confirmDialog()).toBeInTheDocument()
+    expect(cancelReservation).not.toHaveBeenCalled()
+  })
+
+  it('deletes the reservation once the host confirms', async () => {
+    vi.mocked(isOwner).mockReturnValue(true)
+    vi.mocked(cancelReservation).mockResolvedValue(undefined)
+    const detail = await openDetail()
+
+    fireEvent.click(within(detail).getByRole('button', { name: '예약 삭제' }))
+    fireEvent.click(within(confirmDialog()).getByRole('button', { name: '삭제' }))
+
     await waitFor(() => expect(cancelReservation).toHaveBeenCalledWith(1))
-    confirmSpy.mockRestore()
   })
 
   it('leaves the reservation alone when the host dismisses the confirmation', async () => {
     vi.mocked(isOwner).mockReturnValue(true)
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
     const detail = await openDetail()
 
     fireEvent.click(within(detail).getByRole('button', { name: '예약 삭제' }))
+    fireEvent.click(within(confirmDialog()).getByRole('button', { name: '취소' }))
 
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument())
     expect(cancelReservation).not.toHaveBeenCalled()
-    confirmSpy.mockRestore()
   })
 
   it('warns that participants lose their spot before deleting', async () => {
     vi.mocked(isOwner).mockReturnValue(true)
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
     const detail = await openDetail({ ...apiReservation, capacity: 3, participant_count: 2 })
 
     fireEvent.click(within(detail).getByRole('button', { name: '예약 삭제' }))
 
-    expect(confirmSpy).toHaveBeenCalledWith(expect.stringContaining('참가자 2명'))
-    confirmSpy.mockRestore()
+    expect(confirmDialog()).toHaveTextContent('참가자 2명')
   })
 
   it('offers joining rather than deleting on a reservation the user does not own', async () => {
