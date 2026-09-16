@@ -73,8 +73,8 @@ const ENTRIES: LeaderboardEntry[] = [
  * collide with any other figure that happens to match.
  *
  * The label is matched inside `.kpi-card-label` rather than anywhere on the
- * page: 모집 중인 예약 names both a card up here and the section below it,
- * and a bare getByText finds two. */
+ * page: a card's label is a word the sections below it use too, and a bare
+ * getByText then finds several. */
 function kpiCard(label: string): HTMLElement {
   const found = [...document.querySelectorAll<HTMLElement>('.kpi-card')]
     .filter((card) => card.querySelector('.kpi-card-label')?.textContent === label)
@@ -165,9 +165,9 @@ describe('Overview', () => {
     expect(document.querySelector('.kpi-grid')?.textContent).not.toContain('활성 방')
   })
 
-  // The card counts every joinable reservation; the list under it shows the
-  // three soonest. Without the remainder row the page printed "4" directly
-  // above three rows under the same heading and left the reader to guess.
+  // The list shows the soonest few; the remainder row says how many it left
+  // out. Without it the page simply stopped after three rows and gave the
+  // reader no way to tell a short list from a truncated one.
   it('says how many reservations the list could not fit', () => {
     mockedUseOverview.mockReturnValue(polled({
       ...OVERVIEW_DATA,
@@ -179,7 +179,6 @@ describe('Overview', () => {
     }))
     renderOverview()
 
-    expect(kpiValue('모집 중인 예약')).toBe('5')
     // Five joinable, two shown.
     const more = screen.getByRole('link', { name: '외 3건 더 보기' })
     expect(more).toHaveAttribute('href', '/reservation')
@@ -192,19 +191,26 @@ describe('Overview', () => {
     expect(screen.queryByText(/건 더 보기$/)).not.toBeInTheDocument()
   })
 
-  // The registered-player total moved off this page: it is the one figure here
-  // that is not about now, and the leaderboard tab already heads with it.
-  it('counts the reservations still taking people instead of registered players', () => {
+  // The reservation count moved off this row: the section directly below it is
+  // 모집 중인 예약, listing those same reservations with their times and their
+  // free seats, so the card was the weaker copy of a fact already on screen.
+  it('heads the row with the registered total rather than repeating the reservation section', () => {
     renderOverview()
 
-    // Two of the three fixtures are joinable; the 2/2 one is full, which is the
-    // distinction the count exists to make.
-    expect(kpiValue('모집 중인 예약')).toBe('2')
-    expect(kpiHref('모집 중인 예약')).toBe('/reservation')
-    // 12:00Z is the earliest of the two, and the hint is in KST like every
-    // other time on this page.
-    expect(kpiCard('모집 중인 예약').textContent).toContain('가장 빠른 약속 21:00')
-    expect(document.querySelector('.kpi-grid')?.textContent).not.toContain('등록 플레이어')
+    expect(kpiValue('등록 플레이어')).toBe('512')
+    expect(kpiHref('등록 플레이어')).toBe('/leaderboard')
+    expect(kpiCard('등록 플레이어').textContent).toContain('리더보드에 오른 플레이어')
+    // The section below still carries it; the KPI row does not.
+    expect(document.querySelector('.kpi-grid')?.textContent).not.toContain('모집 중인 예약')
+  })
+
+  // The leaderboard is polled by App and arrives after the first paint, so the
+  // card has to say "not yet" rather than "0" — a registered total of zero is
+  // a claim about the site, not a loading state.
+  it('shows a dash rather than zero before the leaderboard lands', () => {
+    renderOverview({ leaderboardTotal: undefined })
+
+    expect(kpiValue('등록 플레이어')).toBe('—')
   })
 
   // Nothing caught the h1-to-h3 gap that opened when .content-heading and its
@@ -225,7 +231,7 @@ describe('Overview', () => {
 
     expect(kpiHref('지금 접속')).toBe('/match/rank_match')
     expect(kpiHref('오늘 접속자')).toBe('/stats')
-    expect(kpiHref('모집 중인 예약')).toBe('/reservation')
+    expect(kpiHref('등록 플레이어')).toBe('/leaderboard')
   })
 
   // The card's own text says what the number is, never where it leads, so the
@@ -301,8 +307,8 @@ describe('Overview', () => {
   })
 
   it('renders main before sub, which the narrow layout positions by order', () => {
-    // Below 760px the row wraps and places the two characters by source order
-    // (:nth-of-type), so a swap here would silently mislabel the columns.
+    // Below 760px the grid places the two characters by source order
+    // (:nth-child), so a swap here would silently mislabel the columns.
     renderOverview()
 
     const row = screen.getByText('TopPlayer').closest('.overview-rank-row')

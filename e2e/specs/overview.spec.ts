@@ -27,13 +27,14 @@ test.describe('Overview', () => {
     await expect(page.getByText('어제 172명')).toBeVisible()
   })
 
-  // The third card is the one that replaced 등록 플레이어: a figure about now
-  // rather than a running total the leaderboard tab already heads with.
-  test('counts only the reservations still taking people', async ({ page }) => {
-    // Two in the fixture, one of them full.
-    const upcoming = page.locator('.kpi-card', { hasText: '모집 중인 예약' })
-    await expect(upcoming.locator('.kpi-card-value')).toHaveText('1')
-    await expect(upcoming).toHaveAttribute('href', '/reservation')
+  // The third card reports the roster, not the reservations: 모집 중인 예약 is
+  // the section immediately below this row, with the same appointments listed
+  // by time and free seats, so the card was the weaker copy of it.
+  test('heads the row with the registered total, not a second reservation count', async ({ page }) => {
+    const registered = page.locator('.kpi-card', { hasText: '등록 플레이어' })
+    await expect(registered.locator('.kpi-card-value')).toHaveText('5')  // leaderboard fixture
+    await expect(registered).toHaveAttribute('href', '/leaderboard')
+    await expect(page.locator('.kpi-grid')).not.toContainText('모집 중인 예약')
   })
 
   test('summarises each feature from its own endpoint', async ({ page }) => {

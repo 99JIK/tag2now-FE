@@ -9,8 +9,6 @@ import type { LeaderboardEntry } from '@/shared/types'
 import type { RoomsData } from '@/match/types'
 import type { WeeklyTopPlayer } from '@/stat/types'
 import { formatGroupName, GROUP_ORDER } from '@/config/tabConfig'
-import type { ApiReservation } from '@/reservation/reservationApi'
-import { isJoinable, kstTimeFormat } from '@/reservation/reservationLabels'
 import { pathOf } from '@/config/routes'
 import { totals } from '@/shared/util/leaderboardFilter'
 import { CardGridSkeleton, ListSkeleton } from '@/shared/components/Skeleton'
@@ -53,24 +51,20 @@ function roomsKpi(rooms: RoomsData | null, loading: boolean): { players: string;
   return { players: String(rooms.totalUsers), breakdown: `방 ${rooms.total}개 · ${breakdown}` }
 }
 
-/** The card that replaced 등록 플레이어.
+/** The third card: how many players this site knows about.
  *
- * A registered-player total is the one figure on this row nobody can act on:
- * it moves by a handful a week and the same number heads the leaderboard tab.
- * What is missing from a page titled "지금 서버에서 벌어지는 일" is the
- * part of it that has not happened yet — so the row now reads 지금 → 오늘 →
- * 이후, and every card names its own time frame.
+ * It used to count the reservations still taking people — but the section
+ * below it is 모집 중인 예약, listing those same reservations with their times
+ * and their free seats, so the card was the same fact twice on one screen and
+ * the weaker copy of it. A registered total is the one figure here that is not
+ * about right now, which is the whole reason it belongs beside two that are.
  *
- * The list is the one `useOverview` already fetched for the section below; no
- * request is added for this. */
-function openReservationsKpi(reservations: ApiReservation[]): { value: string; hint: string } {
-  const joinable = reservations.filter(isJoinable)
-  if (joinable.length === 0) return { value: '0', hint: '예약 탭에서 새 약속 만들기' }
-  const soonest = joinable.reduce((a, b) => (a.start_at <= b.start_at ? a : b))
-  return {
-    value: String(joinable.length),
-    hint: `가장 빠른 약속 ${kstTimeFormat.format(new Date(soonest.start_at))}`,
-  }
+ * `App` already holds it: the leaderboard response heads with `total_records`,
+ * so this adds no request. It is absent only while that first load is in
+ * flight. */
+function registeredPlayersKpi(total?: number): { value: string; hint: string } {
+  if (total == null) return { value: UNKNOWN, hint: '불러오는 중' }
+  return { value: String(total), hint: '리더보드에 오른 플레이어' }
 }
 
 /** 그날 한 번이라도 접속한 인원(unique_players). 동시 접속 피크는 이보다 작아 KPI로 쓰지 않는다. */
@@ -141,7 +135,7 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
 
   const kpi = roomsKpi(rooms, roomsLoading)
   const today = todayPlayers(data?.daily ?? [])
-  const upcoming = openReservationsKpi(data?.reservations ?? [])
+  const registered = registeredPlayersKpi(leaderboardTotal)
 
   return (
     <div className="panel overview-panel">
@@ -162,12 +156,12 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
         </button>
       </div>
 
-      {/* 지금 → 오늘 → 이후. Three figures on three time frames, each named in
-          its own label, so no two cards can be read as the same fact. */}
+      {/* 지금 → 오늘 → 전체. Three figures on three spans, each named in its
+          own label, so no two cards can be read as the same fact. */}
       <div className="kpi-grid">
         <KpiCard icon={Users} label="지금 접속" value={kpi.players} hint={kpi.breakdown} live linkLabel="매치" to={ROOMS_PATH} />
         <KpiCard icon={TrendingUp} label="오늘 접속자" value={today.value} hint={today.hint} linkLabel="통계" to={pathOf('stats')} />
-        <KpiCard icon={CalendarDays} label="모집 중인 예약" value={upcoming.value} hint={upcoming.hint} linkLabel="예약" to={pathOf('reservation')} />
+        <KpiCard icon={Trophy} label="등록 플레이어" value={registered.value} hint={registered.hint} linkLabel="리더보드" to={pathOf('leaderboard')} />
       </div>
 
       {/* The two cards that expire, above the chart rather than below it. Both
