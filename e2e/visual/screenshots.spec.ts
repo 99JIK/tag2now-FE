@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { mockAllApis, dismissPatchNotes, goToMatchTab, signInAs, skipPatchNotes } from '../helpers/mock-api'
+import { goToMatchTab, mockAllApis, signInAs, skipPatchNotes } from '../helpers/mock-api'
 
 const FROZEN_TIME = new Date('2026-03-30T12:00:00Z').getTime()
 
@@ -30,8 +30,8 @@ test.describe('Visual regression', () => {
   }
 
   test('overview view', async ({ page }) => {
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await disableAnimations(page)
     await page.locator('.overview-panel').waitFor()
     await expect(page).toHaveScreenshot('overview.png', { maxDiffPixelRatio: 0.01 })
@@ -51,8 +51,8 @@ test.describe('Visual regression', () => {
   })
 
   test('rooms - rank match view', async ({ page }) => {
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await disableAnimations(page)
     await goToMatchTab(page)
     await page.locator('.panel').waitFor()
@@ -60,8 +60,8 @@ test.describe('Visual regression', () => {
   })
 
   test('rooms - player match view', async ({ page }) => {
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await disableAnimations(page)
     await goToMatchTab(page)
     await page.getByRole('tab', { name: /^플매/ }).click()
@@ -70,8 +70,8 @@ test.describe('Visual regression', () => {
   })
 
   test('leaderboard view', async ({ page }) => {
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await disableAnimations(page)
     await page.locator('button.tab-btn', { hasText: '리더보드' }).click()
     await page.locator('table').waitFor()
@@ -79,8 +79,8 @@ test.describe('Visual regression', () => {
   })
 
   test('community - post list', async ({ page }) => {
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await disableAnimations(page)
     await page.locator('button.tab-btn', { hasText: '커뮤니티' }).click()
     await page.locator('text=Best tag combos').waitFor()
@@ -89,8 +89,8 @@ test.describe('Visual regression', () => {
 
   test('error state', async ({ page }) => {
     await mockAllApis(page, { failEndpoints: ['rooms'] })
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await disableAnimations(page)
     await goToMatchTab(page)
     await page.locator('.state-msg.error').waitFor()
@@ -106,8 +106,8 @@ test.describe('Visual regression', () => {
     await page.route('**/api/history/stats**', () => {})
     await page.route('**/api/community/**', () => {})
     await page.route('**/api/reservations**', () => {})
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await disableAnimations(page)
     await page.locator('.state-msg').first().waitFor()
     await expect(page).toHaveScreenshot('loading-state.png', { maxDiffPixelRatio: 0.01 })

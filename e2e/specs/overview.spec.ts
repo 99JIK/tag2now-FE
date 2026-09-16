@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { mockAllApis, dismissPatchNotes, reservationAt } from '../helpers/mock-api'
+import { mockAllApis, reservationAt, skipPatchNotes } from '../helpers/mock-api'
 
 // The overview is a summary, so what is worth asserting is that each card
 // reflects its own source and that the links out actually change tabs — not the
@@ -12,8 +12,8 @@ test.describe('Overview', () => {
         reservationAt(21, { id: 2, host_display_name: '자리없음호스트', capacity: 2, participant_count: 2 }),
       ],
     })
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
   })
 
   test("shows live room figures alongside today's unique players", async ({ page }) => {
@@ -161,7 +161,6 @@ test.describe('Overview', () => {
   // to open on the post itself, cold, with no click path behind it.
   test('a post link opens the post directly', async ({ page }) => {
     await page.goto('/community/1')
-    await dismissPatchNotes(page)
 
     await expect(page.getByRole('button', { name: /목록/ })).toBeVisible()
     const nav = page.getByRole('tablist', { name: 'Main navigation' })
@@ -182,7 +181,6 @@ test.describe('Overview', () => {
     await page.unrouteAll({ behavior: 'ignoreErrors' })
     await mockAllApis(page, { failEndpoints: ['history'] })
     await page.goto('/')
-    await dismissPatchNotes(page)
 
     // The history endpoints are down, but rooms still are not: the KPI row and
     // the reservation card have to survive their neighbour failing.

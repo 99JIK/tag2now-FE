@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { mockAllApis, dismissPatchNotes, goToMatchTab, skipPatchNotes } from '../helpers/mock-api'
+import { goToMatchTab, mockAllApis, skipPatchNotes } from '../helpers/mock-api'
 
 test.describe('Rooms', () => {
   test.beforeEach(async ({ page }) => {
     await mockAllApis(page)
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await goToMatchTab(page)
   })
 
@@ -55,7 +55,6 @@ test.describe('Rooms', () => {
       },
     })
     await page.goto('/')
-    await dismissPatchNotes(page)
     await goToMatchTab(page)
 
     const row = page.getByRole('row').filter({ has: page.getByRole('button', { name: 'TagComboKing' }) })
@@ -105,10 +104,7 @@ test.describe('Rooms', () => {
 
   test('no rooms shows empty message', async ({ page }) => {
     await mockAllApis(page, { rooms: { rank_match: [], player_match: [] } })
-    // A fresh load re-opens the patch-notes dialog, which would swallow the tab
-    // click; the beforeEach dismissal does not carry across this second goto.
     await page.goto('/')
-    await dismissPatchNotes(page)
     await goToMatchTab(page)
 
     await expect(page.getByText('방이 없습니다.')).toBeVisible()

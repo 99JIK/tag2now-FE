@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { mockAllApis, dismissPatchNotes } from '../helpers/mock-api'
+import { mockAllApis, skipPatchNotes } from '../helpers/mock-api'
 
 test.describe('Leaderboard', () => {
   test.beforeEach(async ({ page }) => {
     await mockAllApis(page)
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.locator('button.tab-btn', { hasText: '리더보드' }).click()
   })
 
@@ -78,8 +78,8 @@ function largeBoard(size: number) {
 test.describe('Leaderboard search, filter and toggle', () => {
   test.beforeEach(async ({ page }) => {
     await mockAllApis(page, { leaderboard: largeBoard(150) })
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.locator('button.tab-btn', { hasText: '리더보드' }).click()
   })
 

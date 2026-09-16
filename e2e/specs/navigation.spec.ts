@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { mockAllApis, dismissPatchNotes, goToMatchTab, signInAs, skipPatchNotes } from '../helpers/mock-api'
+import { goToMatchTab, mockAllApis, signInAs, skipPatchNotes } from '../helpers/mock-api'
 
 // Locators here go through roles and accessible names on purpose: the tab strip
 // is an ARIA tabs widget, so what a user — or a screen reader — can reach is the
@@ -8,8 +8,8 @@ import { mockAllApis, dismissPatchNotes, goToMatchTab, signInAs, skipPatchNotes 
 test.describe('Navigation', () => {
   test.beforeEach(async ({ page }) => {
     await mockAllApis(page)
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
   })
 
   test('page loads on the overview', async ({ page }) => {

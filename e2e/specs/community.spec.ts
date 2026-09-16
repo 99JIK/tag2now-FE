@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { mockAllApis, dismissPatchNotes } from '../helpers/mock-api'
+import { mockAllApis, skipPatchNotes } from '../helpers/mock-api'
 
 test.describe('Community', () => {
   test.beforeEach(async ({ page }) => {
     await mockAllApis(page)
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.locator('button.tab-btn', { hasText: '커뮤니티' }).click()
   })
 

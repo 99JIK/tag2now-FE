@@ -285,10 +285,18 @@ Component tests are prop-driven and need no mocks. `App.test.tsx` mocks the feat
 - `e2e/visual/screenshots.spec.ts` — visual regression, **local only**; CI does not run it.
 
 Helpers worth reaching for: `goToMatchTab` (the overview is the landing tab, so
-a rooms spec can click through or `goto('/match/rank_match')`),
-`dismissPatchNotes` (closes the dialog), and `skipPatchNotes` (marks it seen
-before load, for specs that cannot afford the paint at all — it reads
-`LATEST_PATCH_VERSION` so a version bump cannot silently stop suppressing it).
+a rooms spec can click through or `goto('/match/rank_match')`) and
+`skipPatchNotes`, which every spec calls **before its first navigation** — it
+seeds the seen marker from `LATEST_PATCH_VERSION`, so a version bump cannot
+silently stop suppressing the dialog.
+
+`skipPatchNotes` registers an init script, so one call in a `beforeEach` holds
+for every later `goto` and `reload` in that test. Do not repeat it per
+navigation. `dismissPatchNotes` clicks the dialog's X instead, and the X writes
+nothing — so it has to run again after every navigation, and a spec that
+forgets leaves the modal covering whatever it asserts next. It is now used only
+by `e2e/specs/patch-notes.spec.ts`, which is the one place the dialog itself is
+under test; nothing else should reach for it.
 
 **Do not wait out a poll in real time.** Install `page.clock` before the first
 navigation and use `fastForward`, not `runFor`: `runFor` replays every timer

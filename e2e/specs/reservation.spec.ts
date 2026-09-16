@@ -1,5 +1,5 @@
 import { test, expect, type Locator } from '@playwright/test'
-import { dismissPatchNotes, mockAllApis, reservationAt, signInAs } from '../helpers/mock-api'
+import { mockAllApis, reservationAt, signInAs, skipPatchNotes } from '../helpers/mock-api'
 
 /** Nothing is preselected, so a rank match stays unsubmittable until a rank is
  * picked — every flow that posts one goes through here. */
@@ -25,8 +25,8 @@ test.describe('Reservation', () => {
     await signInAs(page, '나')
     await mockAllApis(page)
     await page.addInitScript(() => localStorage.setItem('ttt2-username', '나'))
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
   })
 
@@ -68,7 +68,6 @@ test.describe('Reservation', () => {
       reservations: [reservationAt(21, { id: 7, host_display_name: '온프' }), reservationAt(22, { id: 8, host_display_name: '둘째' })],
     })
     await page.goto('/reservation')
-    await dismissPatchNotes(page)
     const detail = page.getByRole('complementary', { name: '선택한 예약 상세' })
     const card = page.getByRole('button', { name: /온프/ })
     await expect(card).toBeVisible()
@@ -94,7 +93,6 @@ test.describe('Reservation', () => {
       reservations: [reservationAt(21, { id: 7, host_display_name: '온프', host_ranks: ['Yaksa', 'Fujin', 'Warrior', 'Vanquisher', 'Mentor'] })],
     })
     await page.reload()
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
 
     const card = page.getByRole('button', { name: /온프/ })
@@ -123,7 +121,6 @@ test.describe('Reservation', () => {
       })
     })
     await page.reload()
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
 
     const alert = page.getByRole('alert')
@@ -208,8 +205,8 @@ test.describe('Reservation deletion', () => {
     await page.clock.runFor(0)
     await signInAs(page, '나')
     await mockAllApis(page, { reservations })
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
   }
 
@@ -271,8 +268,8 @@ test.describe('Reservation editing', () => {
     await page.clock.runFor(0)
     await signInAs(page, '나')
     await mockAllApis(page, { reservations })
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
   }
 
@@ -325,7 +322,6 @@ test.describe('Reservation editing', () => {
     await openReservationTab(page, [taken])
     await page.evaluate(() => localStorage.setItem('reservation-owner-11', 'owner-11'))
     await page.reload()
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
     await page.getByRole('button', { name: /나 모집중/ }).click()
     const detail = page.getByRole('complementary', { name: '선택한 예약 상세' })
@@ -358,8 +354,8 @@ test.describe('Reservation participation', () => {
   async function openReservationTab(page: import('@playwright/test').Page, reservations = [openRankMatch]) {
     await signInAs(page, '나')
     await mockAllApis(page, { reservations })
+    await skipPatchNotes(page)
     await page.goto('/')
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
     await page.getByRole('button', { name: /상대/ }).click()
     return page.getByRole('complementary', { name: '선택한 예약 상세' })
@@ -415,7 +411,6 @@ test.describe('Reservation participation', () => {
     await expect(detail.getByRole('button', { name: '참가 취소' })).toBeVisible()
 
     await page.reload()
-    await dismissPatchNotes(page)
     await page.getByRole('tab', { name: '예약' }).click()
     await page.getByRole('button', { name: /상대/ }).click()
 
