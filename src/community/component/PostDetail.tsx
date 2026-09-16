@@ -106,7 +106,7 @@ export default function PostDetail({ post, username, onBack, onRefresh, ensureId
             </div>
           )}
         </div>
-        <AuthorBadge name={post.author} entries={leaderboardEntries} className="inline-flex text-sm mb-2" />
+        <AuthorBadge name={post.author} entries={leaderboardEntries} className="author-badge-lg inline-flex mb-2" />
         <h2>{post.title}</h2>
       </header>
       <div className="post-detail-body"><p>{post.body}</p></div>

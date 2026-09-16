@@ -35,7 +35,7 @@
  * The cost is a gap after a short title, and it is the right cost: the gap is
  * one blank region in a stable layout, where letting the columns float put a
  * different-sized hole in a different place on every row. */
-.post-row { display: grid; width: 100%; min-height: 46px; grid-template-columns: 88px minmax(0, 1fr) 190px 96px 54px; align-items: center; gap: 10px; padding: 6px 10px; border: 0; border-top: 1px solid var(--color-border); background: color-mix(in srgb, var(--color-surface-tint) 1.2%, transparent); color: var(--color-txt); text-align: left; cursor: pointer; transition: background-color 150ms ease; }
+.post-row { display: grid; width: 100%; min-height: 46px; grid-template-columns: 62px minmax(0, 1fr) 190px 96px 54px; align-items: center; gap: 10px; padding: 6px 10px; border: 0; border-top: 1px solid var(--color-border); background: color-mix(in srgb, var(--color-surface-tint) 1.2%, transparent); color: var(--color-txt); text-align: left; cursor: pointer; transition: background-color 150ms ease; }
 .post-row:focus-visible { outline: 2px solid var(--color-primary); outline-offset: -2px; }
 .post-row-title { min-width: 0; overflow: hidden; color: var(--color-txt); font-size: var(--text-sm); font-weight: var(--weight-row); text-overflow: ellipsis; white-space: nowrap; }
 /* The three engagement figures, together. Left-aligned inside a fixed cell so
@@ -106,7 +106,10 @@
 /* A post carries a category and up to two characters. They were one field, so
    this is the first place both can be shown at once. */
 .post-tags { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
-.post-type-chip { display: inline-flex; align-items: center; min-height: 20px; flex: 0 0 auto; padding: 0 6px; border: 1px solid var(--color-primary-dim); border-radius: 4px; background: color-mix(in srgb, var(--color-primary) 12%, transparent); color: var(--color-primary-text); font-size: var(--text-4xs); font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; }
+/* max-width/ellipsis: a legacy post can still carry a character *name* as its
+   category, which is longer than the three real ones. It truncates rather than
+   pushing the title out of its column. */
+.post-type-chip { display: inline-flex; max-width: 100%; align-items: center; min-height: 20px; flex: 0 0 auto; overflow: hidden; padding: 0 6px; text-overflow: ellipsis; border: 1px solid var(--color-primary-dim); border-radius: 4px; background: color-mix(in srgb, var(--color-primary) 12%, transparent); color: var(--color-primary-text); font-size: var(--text-4xs); font-weight: var(--weight-strong); letter-spacing: .04em; white-space: nowrap; }
 .post-tags-md .post-type-chip { min-height: 24px; padding: 0 9px; font-size: var(--text-xs); }
 /* The two portraits overlap slightly, which reads as a pair rather than as two
    unrelated tags — a tag team is one choice made twice. */
@@ -114,10 +117,24 @@
 .post-tag-char { height: 24px; border-radius: 3px; border: 1px solid var(--color-border-light); background: var(--color-bg-row); }
 .post-tag-char + .post-tag-char { margin-left: -6px; }
 .post-tags-md .post-tag-char { height: 34px; }
-.post-row-tags { display: flex; min-width: 0; align-items: center; justify-content: flex-start; }
+/* Centred, and only as wide as the widest thing it can hold: a category chip
+   with two portraits beside it measures 58px, so 88px left a lone portrait
+   sitting 73px from the title it belongs to. Centring is what keeps a one- and
+   a two-character row reading as the same column — flush left, they started
+   together and ended 9px apart, which made the column look ragged rather than
+   aligned.
+   A fixed track, not `auto`: every row is its own grid, so an intrinsic width
+   would be measured per row and the columns would stop lining up down the
+   feed, which is the whole reason this is a grid. */
+.post-row-tags { display: flex; min-width: 0; overflow: hidden; align-items: center; justify-content: center; }
 
 /* ─── Author byline ─────────────────────────── */
-.author-badge { align-items: center; gap: 5px; min-width: 0; }
+/* The badge sets the size and its parts inherit it, so a caller that wants a
+   bigger byline gets one. They used to carry their own font-size, which meant
+   the post detail's `text-sm` reached the wrapper and stopped: the name stayed
+   at the 11px a feed row wants, under a 14px context and beside a chip twice
+   its height. */
+.author-badge { align-items: center; gap: 5px; min-width: 0; font-size: var(--text-2xs); }
 .post-row .author-badge { display: inline-flex; }
 /* Rank art is a banner: sized by height so the column keeps one shape whatever
    the rank name is. */
@@ -125,7 +142,14 @@
 /* Context, not identity — so it rides behind the name rather than beside it at
    equal strength. --color-accent (green) said "a win" everywhere else. */
 .author-badge-place { flex: 0 0 auto; color: var(--color-txt-faint); font-size: var(--text-3xs); font-weight: var(--weight-label); font-variant-numeric: tabular-nums; }
-.author-badge-name { min-width: 0; overflow: hidden; color: var(--color-txt); font-size: var(--text-2xs); font-weight: var(--weight-row); text-overflow: ellipsis; white-space: nowrap; }
+.author-badge-name { min-width: 0; overflow: hidden; color: var(--color-txt); font-size: inherit; font-weight: var(--weight-row); text-overflow: ellipsis; white-space: nowrap; }
+
+/* The post detail's byline. It names the author of the thing you opened, not
+   one row among forty, so it is set at reading size and the banner grows with
+   it rather than staying at the height a list needs. */
+.author-badge-lg { gap: 7px; font-size: var(--text-sm); }
+.author-badge-lg .author-badge-rank { height: 20px; }
+.author-badge-lg .author-badge-place { font-size: var(--text-2xs); }
 
 /* The picker's current selection, stated in words under the grid — the tiles
    are small and a highlight alone is easy to lose track of. */
