@@ -88,16 +88,25 @@ export default function PostDetail({ post, username, onBack, onRefresh, ensureId
         <ArrowLeft size={14} aria-hidden="true" /> 목록
       </button>
 
-      {/* Tags, then the title, then who wrote it and when.
-          It used to run tags+time, author, title - so the heading of the page
-          was its third line, and the two images stacked at the same left edge
-          in the same size with nothing saying which belonged to the post and
-          which to the person. The time sat with the tags, where it describes
-          nothing; it belongs to the byline, which is the line that answers
-          "who, and when". */}
+      {/* One line: what the post is and what it says on the left, who wrote it
+          and when on the right.
+          It used to stack three rows - tags+time, author, title - so the
+          heading of the page was its third line, the two images sat at the
+          same left edge in the same size with nothing saying which belonged
+          to the post and which to the person, and the timestamp was grouped
+          with the tags, where it describes nothing.
+          The title wraps rather than truncating: this is the post's own page
+          and its heading is not something to put an ellipsis on. */}
       <header className="post-detail-header">
-        <div className="post-detail-top">
+        <div className="post-detail-head-main">
           <PostTypeBadge postType={post.post_type} characters={post.characters ?? []} size="md" />
+          <h2>{post.title}</h2>
+        </div>
+        <div className="post-detail-head-side">
+          <div className="post-detail-byline">
+            <AuthorBadge name={post.author} entries={leaderboardEntries} className="author-badge-lg inline-flex" />
+            <span className="post-detail-time">{formatTimeAgo(post.created_at)}</span>
+          </div>
           {username && post.author === username && (
             <div className="post-detail-owner-actions">
               <button onClick={() => setEditing(true)} className="btn-ghost inline-flex items-center gap-1">
@@ -108,11 +117,6 @@ export default function PostDetail({ post, username, onBack, onRefresh, ensureId
               </button>
             </div>
           )}
-        </div>
-        <h2>{post.title}</h2>
-        <div className="post-detail-byline">
-          <AuthorBadge name={post.author} entries={leaderboardEntries} className="author-badge-lg inline-flex" />
-          <span className="post-detail-time">{formatTimeAgo(post.created_at)}</span>
         </div>
       </header>
       <div className="post-detail-body"><p>{post.body}</p></div>
