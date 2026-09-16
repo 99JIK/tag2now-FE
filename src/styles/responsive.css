@@ -97,20 +97,26 @@
   .room-tabs-label { display: none; }
   .room-tabs > div { width: 100%; }
   .room-tabs button { min-height: 40px; flex: 1; justify-content: center; }
-  .section-toolbar { align-items: flex-start; }
-  .section-title p { display: none; }
+  /* One row, one centre line, on every panel. The heading used to sit top-
+     aligned against a control a head taller than it, and a title long enough
+     to wrap stood the bar a whole line taller still --- which is what made
+     these read as a different bar on every tab. The title now ellipses inside
+     what is left, the icon and the controls come down to phone size, and only
+     a title that cannot share a line at all pushes its control onto the next
+     one (.section-toolbar wraps). */
+  .section-toolbar { min-height: 42px; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; }
+  .compact-toolbar { margin-bottom: 12px; }
+  .section-title :is(p, small) { display: none; }
+  .section-icon { width: 26px; height: 26px; }
+  /* Whatever the section put beside its title --- a wrapper, or a bare toggle
+     group --- takes the width the title leaves and splits it evenly between
+     its options, so every bar's buttons are the same size on every tab. */
+  .section-toolbar > :not(.section-title) { flex: 1 1 auto; min-width: 0; }
+  .section-toolbar :is(.toggle-group, .segmented-control) { display: flex; width: 100%; min-width: 0; }
+  .section-toolbar :is(.toggle-group-option, .segmented-control button) { min-width: 0; flex: 1 1 0; padding: 0 8px; }
   .chart-grid { grid-template-columns: 1fr; }
   .filter-bar { align-items: flex-start; flex-direction: column; }
-  .reservation-filter-bar { align-items: stretch; flex-direction: column; gap: 8px; padding: 12px 0 12px; }
-  .reservation-filter-heading small { display: none; }
-  .reservation-filter-controls .toggle-group { flex: 1 1 auto; }
-  .reservation-filter-controls .toggle-group-option { min-height: 38px; flex: 1 1 0; padding: 0 8px; }
   .reservation-content-grid { margin-top: 12px; }
-  .community-filter-bar { align-items: stretch; flex-direction: column; gap: 8px; padding: 12px 0 12px; }
-  .community-filter-heading small { display: none; }
-  .community-filter-controls, .community-filter-controls .segmented-control { width: 100%; min-width: 0; }
-  .community-filter-controls .segmented-control { display: flex; }
-  .community-filter-controls .segmented-control button { min-width: 0; flex: 1; }
   /* Two lines below 760px: the title needs the whole width, so the byline and
      the counts drop underneath it. The tag column stays put and spans both,
      which is what keeps the left edge straight. */
@@ -138,7 +144,7 @@
      opening a reservation meant scrolling past all of them to reach it. */
   .panel:not(.has-selection) .reservation-detail { display: none; }
   .panel.has-selection .reservation-list,
-  .panel.has-selection .reservation-filter-bar { display: none; }
+  .panel.has-selection .filter-toolbar { display: none; }
   .reservation-detail-back { display: inline-flex; align-items: center; gap: 4px; margin-bottom: 12px; }
   .reservation-detail { position: static; }
   .btn-primary, .btn-ghost, .btn-danger, .refresh-btn { min-height: 44px; }

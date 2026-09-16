@@ -8,21 +8,36 @@
 /* 60vh left ~300px of empty panel under a five-row table. Enough to stop the
    page collapsing between tabs, not so much that content floats in a void. */
 .panel { min-height: 340px; padding: 16px; overflow: hidden; border: 1px solid var(--color-border-light); border-radius: 8px; background: var(--color-bg-panel); }
-.section-toolbar { display: flex; min-height: 48px; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--color-border-light); }
+/* The one bar that sits over a panel's content: an icon, a title, a byline,
+   and whatever control belongs to that section. Every panel used to grow its
+   own --- the reservation and community filters were the same bar at a
+   different min-height with a title two steps smaller --- so the heading and
+   the buttons beside it lined up differently on every tab, and on a phone,
+   where nothing has width to spare, the differences turned into breakage. */
+.section-toolbar { display: flex; min-height: 48px; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--color-border-light); }
 .community-section-toolbar { margin-bottom: 0; }
 .compact-toolbar { margin-bottom: 16px; }
-.section-title { display: flex; min-width: 0; align-items: center; gap: 8px; }
+.section-title { display: flex; min-width: 0; flex: 1 1 auto; align-items: center; gap: 8px; }
+/* The text column, so a long title ellipses inside the space left over
+   instead of wrapping and standing the whole bar a line taller than the
+   control it sits beside. */
+.section-title > div { min-width: 0; }
+/* Anything a section drives itself: a toggle group, a segmented control, a
+   button pair. It never grows into the title's width and never shrinks below
+   its own content --- if the two genuinely cannot share a line the bar wraps
+   and the control takes the next one. */
+.section-controls { display: flex; min-width: 0; flex: 0 1 auto; align-items: center; justify-content: flex-end; gap: 8px; }
 .section-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--color-primary) 24%, transparent); border-radius: 6px; background: color-mix(in srgb, var(--color-primary) 10%, transparent); color: var(--color-primary-text); }
 /* Level varies with depth --- a panel's own title is h2, a card's inside it is
    h3 --- while the treatment does not. Semantics pick the tag, this picks the
    size, which is the only way both can be right at once. */
-.section-title :is(h2, h3) { margin: 0; color: var(--color-txt); font-size: var(--text-15); line-height: 1.25; font-weight: var(--weight-strong); }
+.section-title :is(h2, h3, strong) { display: block; margin: 0; overflow: hidden; color: var(--color-txt); font-size: var(--text-15); line-height: 1.25; font-weight: var(--weight-strong); text-overflow: ellipsis; white-space: nowrap; }
 /* 11px --- the type scale's own floor --- rather than 10px, here and on the two
    rules below. All three carry Korean sentences, not labels or figures, and a
    Hangul syllable packs two or three jamo into the em a Latin letter has to
    itself, so it loses its strokes a step earlier. The contrast at these sizes
    was already reasoned about; the resolution was not. */
-.section-title p { margin: 2px 0 0; color: var(--color-txt-dim); font-size: var(--text-2xs); }
+.section-title :is(p, small) { display: block; margin: 2px 0 0; overflow: hidden; color: var(--color-txt-dim); font-size: var(--text-2xs); text-overflow: ellipsis; white-space: nowrap; }
 .toolbar-actions { display: flex; align-items: center; gap: 6px; }
 .data-table-wrap { width: 100%; overflow: hidden; border: 1px solid var(--color-border); border-radius: 6px; }
 .data-table-wrap table { width: 100%; min-width: 0 !important; table-layout: fixed; border-collapse: collapse; }

@@ -187,15 +187,18 @@ export default function Reservation({ leaderboardEntries = [] }: { leaderboardEn
           />
         )}
 
-        <div className="reservation-filter-bar">
-          <div className="reservation-filter-heading">
-            <span className="reservation-filter-icon" aria-hidden="true"><Filter size={14} /></span>
+        {/* The same bar every other section heads with, not a filter widget of
+            its own: one icon size, one title size, one alignment against the
+            control beside it. */}
+        <div className="section-toolbar filter-toolbar">
+          <div className="section-title">
+            <span className="section-icon" aria-hidden="true"><Filter size={14} /></span>
             <div>
               <strong>예약 필터</strong>
               <small>원하는 매치 조건만 골라보세요.</small>
             </div>
           </div>
-          <div className="reservation-filter-controls">
+          <div className="section-controls">
             <ToggleGroup label="매치 종류 필터" value={typeFilter} options={TYPE_FILTERS.map((type) => ({ value: type, label: type }))} onChange={setTypeFilter} />
           </div>
         </div>

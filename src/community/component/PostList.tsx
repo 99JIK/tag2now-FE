@@ -48,15 +48,15 @@ export default function PostList({
         </div>
       </div>
 
-      <div className="community-filter-bar">
-        <div className="community-filter-heading">
-          <span className="community-filter-icon" aria-hidden="true"><SlidersHorizontal size={14} /></span>
+      <div className="section-toolbar filter-toolbar">
+        <div className="section-title">
+          <span className="section-icon" aria-hidden="true"><SlidersHorizontal size={14} /></span>
           <div>
             <strong>게시글 분류</strong>
             <small>보고 싶은 게시글 유형을 선택하세요.</small>
           </div>
         </div>
-        <div className="community-filter-controls">
+        <div className="section-controls">
           <div className="segmented-control" role="group" aria-label="게시글 분류">
             {['all', ...POST_TYPES].map((t) => {
               const active = (t === 'all' && !postType) || postType === t

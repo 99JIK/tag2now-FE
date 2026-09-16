@@ -7,22 +7,12 @@
 
 .filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding: 8px; border: 1px solid var(--color-border); border-radius: 6px; background: color-mix(in srgb, var(--color-surface-tint) 1.5%, transparent); }
 .filter-label { display: inline-flex; align-items: center; gap: 4px; color: var(--color-txt-dim); font-size: var(--text-3xs); font-weight: var(--weight-row); }
-.reservation-filter-bar { display: flex; min-height: 66px; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 2px; border-bottom: 1px solid var(--color-border-light); }
-.reservation-filter-heading { display: flex; min-width: 0; align-items: center; gap: 8px; }
-.reservation-filter-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent); border-radius: 6px; background: color-mix(in srgb, var(--color-primary) 8%, transparent); color: var(--color-primary-text); }
-.reservation-filter-heading strong { display: block; color: var(--color-txt); font-size: var(--text-xs); font-weight: var(--weight-strong); }
-.reservation-filter-heading small { display: block; margin-top: 2px; color: var(--color-txt-dim); font-size: var(--text-3xs); }
-.reservation-filter-controls { display: flex; min-width: 0; justify-content: flex-end; }
+/* Both boards filter through the shared .section-toolbar now; what is left
+   here is only what the board itself adds to it. */
+.filter-toolbar .segmented-control { min-width: 250px; }
+.filter-toolbar .segmented-control button { flex: 1; padding-inline: 16px; }
+.filter-toolbar + .character-filter { margin-top: 8px; }
 .reservation-content-grid { margin-top: 16px; }
-.community-filter-bar { display: flex; min-height: 66px; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 2px; border-bottom: 1px solid var(--color-border-light); }
-.community-filter-heading { display: flex; min-width: 0; align-items: center; gap: 8px; }
-.community-filter-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent); border-radius: 6px; background: color-mix(in srgb, var(--color-primary) 8%, transparent); color: var(--color-primary-text); }
-.community-filter-heading strong { display: block; color: var(--color-txt); font-size: var(--text-xs); font-weight: var(--weight-strong); }
-.community-filter-heading small { display: block; margin-top: 2px; color: var(--color-txt-dim); font-size: var(--text-3xs); }
-.community-filter-controls { flex: 0 0 auto; }
-.community-filter-controls .segmented-control { min-width: 250px; }
-.community-filter-controls .segmented-control button { flex: 1; padding-inline: 16px; }
-.community-filter-bar + .character-filter { margin-top: 8px; }
 /* The row that opens the grid, and the one control that clears it. Same
    shape as the leaderboard's, because it is the same job. */
 .character-filter-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
