@@ -62,8 +62,8 @@ export default memo(function RankMatchTable({ rooms, leaderboardEntries }: RankM
                     <span className="tracking-widest">{tier}</span>
                   </th>
                 </tr>
-                {inGame.map((r,i) => (
-                  <tr key={i} className="tbl-row" style={rowAccentStyle}>
+                {inGame.map((r) => (
+                  <tr key={r.room_id} className="tbl-row" style={rowAccentStyle}>
                     <td className="tbl-td">
                       <RankImage rankInfo={r.rank_info} className="min-w-19.75 h-9 w-auto mx-auto" />
                     </td>
@@ -86,8 +86,8 @@ export default memo(function RankMatchTable({ rooms, leaderboardEntries }: RankM
                       <div className="searching-players flex flex-wrap items-center gap-x-3 gap-y-1">
                         <span className="searching-icon shrink-0 text-tier-yellow"><Search size={16} aria-hidden="true" /></span>
                         <RankImage rankInfo={searching[0].rank_info} className="h-7 w-auto shrink-0" />
-                        {searching.map(({users: searchUsers}) => (
-                          <button key={searchUsers[0].np_id} onClick={() => setSelectedNpid(searchUsers[0].np_id)} className="player-btn">
+                        {searching.map(({room_id, users: searchUsers}) => searchUsers?.[0] && (
+                          <button key={room_id} onClick={() => setSelectedNpid(searchUsers[0].np_id)} className="player-btn">
                             {searchUsers[0].online_name}
                           </button>
                         ))}
