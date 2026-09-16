@@ -232,20 +232,20 @@ export default function Stats({ leaderboardEntries = [] }: StatsProps) {
             <div className="section-toolbar compact-toolbar">
               <div className="section-title">
                 <span className="section-icon"><Activity size={15} /></span>
-                <div><h3>접속자 흐름</h3><p>시간대와 날짜별 활성 사용자</p></div>
+                <div><h3>접속자 흐름</h3><p>시간대와 날짜별 활성 사용자 · 하루는 06시에 시작</p></div>
               </div>
               <ToggleGroup options={DAY_OPTIONS} value={days} onChange={setDays} label="기간" />
             </div>
             <div className="chart-grid">
             <section aria-labelledby="hourly-heading" className="chart-panel">
               <h4 id="hourly-heading">
-                시간대별 접속자 <span className="text-2xs font-normal opacity-60">(KST)</span>
+                시간대별 접속자 <span className="text-2xs font-normal opacity-60">(KST 06시 ~ 익일 05시)</span>
               </h4>
               <HourlyChart data={hourly} />
             </section>
             <section aria-labelledby="daily-heading" className="chart-panel">
               <h4 id="daily-heading">
-                일별 접속자
+                일별 접속자 <span className="text-2xs font-normal opacity-60">(06시 기준)</span>
               </h4>
               <DailyChart data={daily} />
             </section>

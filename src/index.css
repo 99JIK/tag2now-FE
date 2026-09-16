@@ -815,6 +815,10 @@ select.input-base option { background: #1b1b1f; color: var(--color-txt); }
 .activity-timeline-cells { display: grid; grid-template-columns: repeat(24,minmax(2px,1fr)); gap: 2px; height: 42px; align-items: end; padding: 6px 6px; border: 1px solid var(--color-border); border-radius: 6px; background: rgba(0,0,0,.1); }
 .activity-timeline-cells span { height: 8px; border-radius: 6px; background: rgba(255,255,255,.06); }
 .activity-timeline-cells span.is-active { height: 26px; background: var(--color-primary); }
+/* The strip runs 06:00 to 06:00, so midnight falls inside it rather than at an
+   edge --- without a mark the last six cells read as the same day. */
+.activity-timeline-cells span.starts-next-day { position: relative; }
+.activity-timeline-cells span.starts-next-day::before { content: ''; position: absolute; left: -2px; top: -6px; bottom: -6px; width: 1px; background: var(--color-border); }
 .activity-timeline-labels { display: flex; justify-content: space-between; margin-top: 4px; color: var(--color-txt-faint); font-size: 9px; font-weight: 650; font-variant-numeric: tabular-nums; }
 .history-empty { display: grid; min-height: 172px; place-items: center; color: var(--color-txt-dim); font-size: 11px; text-align: center; }
 .history-state { margin: 16px; }
