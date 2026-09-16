@@ -48,25 +48,25 @@ test.describe('Overview', () => {
     // TagComboKing tops the weekly fixture and plays Lars/Alisa on the
     // leaderboard; the portraits have to come from that join, not the weekly
     // endpoint, which knows only match counts.
-    const top = weekly.locator('.overview-rank-row').first()
+    const top = weekly.locator('.rank-row').first()
     await expect(top.locator('img[alt="Lars"]')).toBeVisible()
     await expect(top.locator('img[alt="Alisa"]')).toBeVisible()
 
     // A weekly player absent from the leaderboard keeps its columns as dashes.
-    const unranked = weekly.locator('.overview-rank-row', { hasText: 'UnrankedPlayer' })
+    const unranked = weekly.locator('.rank-row', { hasText: 'UnrankedPlayer' })
     await expect(unranked.locator('.mini-char.is-empty')).toHaveCount(2)
   })
 
   test('gives the weekly figure its own column beside the name', async ({ page, isMobile }) => {
     test.skip(isMobile, 'The mobile overview drops the character columns.')
-    const top = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-row').first()
-    const nameBox = await top.locator('.overview-rank-name').boundingBox()
-    const nameLabel = top.locator('.overview-rank-btn-label')
-    const detailBox = await top.locator('.overview-rank-detail').boundingBox()
+    const top = page.getByRole('region', { name: '주간 철악귀' }).locator('.rank-row').first()
+    const nameBox = await top.locator('.rank-name').boundingBox()
+    const nameLabel = top.locator('.rank-btn-label')
+    const detailBox = await top.locator('.rank-detail').boundingBox()
     // The visible figure only. The cell also carries the count it was taken
     // over and an sr-only label naming what it counts, and measuring the whole
     // element would measure those too.
-    const figureBox = await top.locator('.overview-rank-detail strong').evaluate(element => {
+    const figureBox = await top.locator('.rank-detail strong').evaluate(element => {
       const range = document.createRange()
       range.selectNodeContents(element)
       const rect = range.getBoundingClientRect()
@@ -155,7 +155,7 @@ test.describe('Overview', () => {
   // out at the row's edge opens anything is a hit test, and the unit suite has
   // no layout engine to answer it.
   test('a top-five row opens the player from anywhere along it', async ({ page }) => {
-    const top = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-row').first()
+    const top = page.getByRole('region', { name: '주간 철악귀' }).locator('.rank-row').first()
 
     // Bottom-left of the row: the position number's column, nowhere near the
     // name. Measured rather than fixed, so it stays inside the row in both the
@@ -177,7 +177,7 @@ test.describe('Overview', () => {
   // The far edge is the part a decoration reaches last, so that is where this
   // clicks.
   test('a podium row opens the player from its far edge', async ({ page }) => {
-    const medal = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-row.is-podium').first()
+    const medal = page.getByRole('region', { name: '주간 철악귀' }).locator('.rank-row.is-podium').first()
     const box = (await medal.boundingBox())!
 
     await medal.click({ position: { x: box.width - 20, y: box.height / 2 } })

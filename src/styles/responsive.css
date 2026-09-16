@@ -28,21 +28,21 @@
      carries an sr-only one for anyone who cannot see that.
      Assigned by `:nth-child`, not `:nth-of-type`: every child of the row is a
      <span>, so by type they all count as one. */
-  .overview-rank-row { min-height: 0; padding: 5px 6px; gap: 2px 6px; grid-template-columns: 22px minmax(0,1fr) 88px 88px; }
-  .overview-rank-row > .rank-no { grid-row: 1 / 3; grid-column: 1; }
-  .overview-rank-row > .overview-rank-name { grid-row: 1; grid-column: 2; }
-  .overview-rank-row > .overview-rank-detail { grid-row: 2; grid-column: 2; justify-content: flex-start; padding-left: 5px; }
-  .overview-rank-row > .mini-char:nth-child(4) { grid-row: 1 / 3; grid-column: 3; }
-  .overview-rank-row > .mini-char:nth-child(5) { grid-row: 1 / 3; grid-column: 4; }
-  .overview-rank-head { grid-template-columns: 22px minmax(0,1fr) 88px 88px; padding-inline: 6px; }
-  .overview-rank-head > :nth-child(3) { display: none; }
+  .rank-row { min-height: 0; padding: 5px 6px; gap: 2px 6px; grid-template-columns: 22px minmax(0,1fr) 88px 88px; }
+  .rank-row > .rank-no { grid-row: 1 / 3; grid-column: 1; }
+  .rank-row > .rank-name { grid-row: 1; grid-column: 2; }
+  .rank-row > .rank-detail { grid-row: 2; grid-column: 2; justify-content: flex-start; padding-left: 5px; }
+  .rank-row > .mini-char:nth-child(4) { grid-row: 1 / 3; grid-column: 3; }
+  .rank-row > .mini-char:nth-child(5) { grid-row: 1 / 3; grid-column: 4; }
+  .rank-head { grid-template-columns: 22px minmax(0,1fr) 88px 88px; padding-inline: 6px; }
+  .rank-head > :nth-child(3) { display: none; }
   /* A list with no figure keeps the same four tracks; its characters are the
      third and fourth children rather than the fourth and fifth. */
-  .overview-rank-list.has-no-detail .overview-rank-row,
-  .overview-rank-list.has-no-detail .overview-rank-head { grid-template-columns: 22px minmax(0,1fr) 88px 88px; }
-  .overview-rank-list.has-no-detail .overview-rank-head > :nth-child(3) { display: block; }
-  .overview-rank-list.has-no-detail .overview-rank-row > .mini-char:nth-child(3) { grid-row: 1; grid-column: 3; }
-  .overview-rank-list.has-no-detail .overview-rank-row > .mini-char:nth-child(4) { grid-row: 1; grid-column: 4; }
+  .rank-list.has-no-detail .rank-row,
+  .rank-list.has-no-detail .rank-head { grid-template-columns: 22px minmax(0,1fr) 88px 88px; }
+  .rank-list.has-no-detail .rank-head > :nth-child(3) { display: block; }
+  .rank-list.has-no-detail .rank-row > .mini-char:nth-child(3) { grid-row: 1; grid-column: 3; }
+  .rank-list.has-no-detail .rank-row > .mini-char:nth-child(4) { grid-row: 1; grid-column: 4; }
   /* Sized so a portrait, a banner and the record fit the 92px track together —
      the same cell the leaderboard table draws at the same width. */
   .mini-char { gap: 4px; }
@@ -174,7 +174,6 @@
   .reservation-modal-actions { position: sticky; bottom: -14px; z-index: 3; margin: 2px -16px -16px; padding: 8px 16px; background: var(--color-bg-sunken); }
   .reservation-modal-actions > button { flex: 1; }
   .rank-picker-panel .grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
-  .ranking-table tbody tr { height: 54px; }
   /* The rank art and the VS column are fixed-width, so at 375px they took 59%
      of the table and left each name 66px — narrower than the .player-btn
      inside it, which then spilled past the wrap's hidden overflow and lost its
@@ -186,32 +185,11 @@
   .match-table .player-name { max-width: none; padding-inline: 4px; font-size: var(--text-13); }
   .match-table .player-btn { display: block; width: 100%; overflow: hidden; padding-inline: 4px; text-overflow: ellipsis; white-space: nowrap; }
   .match-table .vs-label { font-size: var(--text-xs); }
-  .ranking-table .player-btn { width: 100%; max-width: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  /* The name gets the width back. At 393px it was 112px against 95px for each
-     character cell, and 62 of those 95 were a rank banner --- so "Daddyking_"
-     truncated to "Daddyk..." while the art beside it had room to spare. The
-     name is what a reader scans a leaderboard for. */
-  .leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { width: 26px; }
-  .leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { width: auto; }
-  /* Both character columns at the same width, and the desktop gutter off.
-     Column 5 had no phone rule at all, so it kept the desktop 172px while the
-     percentages above it squeezed MAIN to 53 --- two cells holding the same
-     kind of thing, drawn at three times the size of each other, with the name
-     between them cut to four characters. The weekly table is this table now,
-     so both tabs were wrong in exactly the same way. */
-  .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4),
-  .leaderboard-table th:nth-child(5), .leaderboard-table td:nth-child(5) { width: 92px; padding-left: 0; }
-  .ranking-table .char-td { min-width: 0; max-width: none; overflow: hidden; }
-  /* The raw record stays, stacked under the rate rather than beside it. It
-     used to be hidden here: on one line the two clipped mid-number at 393px,
-     which reads as a rendering fault. Two lines fit, and "00% 000W 000L" is
-     what the table is for --- the rate alone is a summary of numbers the
-     reader came to see. */
+  /* CharCell is the history panel's and the profile card's cell now — the
+     rankings draw MiniCharCell, whose phone rules sit with the row. Stacked,
+     because both places that still use it are narrow columns. */
   .char-cell-record { flex-direction: column; align-items: flex-start; gap: 0; }
   .char-cell-wl { font-size: var(--text-5xs); }
-  /* The totals column is the first thing to go at 393px: the same numbers are
-     in each character's cell, and the sort controls stay reachable. */
-  .lb-total-col { display: none; }
   .lb-picker { padding: 6px; }
   /* One scrolling row, not two wrapped ones: eight bands wrapped cost 48px of
      a 851px screen, and 334px of filters already sat above the first result.
@@ -229,7 +207,6 @@
   /* Sized by height so the banner keeps its shape, and capped so it cannot take
      the cell back off the name. */
   .char-cell-rank { width: auto; max-width: 50px; height: auto; max-height: 21px; object-fit: contain; }
-  .ranking-table .char-td img { max-width: 100%; object-fit: contain; }
   /* A margin of page stays visible around the dialog, so it reads as a popup
      rather than a screen of its own. */
   .history-backdrop { align-items: center; padding: 24px 16px; }

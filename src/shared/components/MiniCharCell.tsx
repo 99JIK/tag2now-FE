@@ -2,15 +2,16 @@ import RankImage from '@/shared/components/RankImage'
 import { charImageUrl } from '@/shared/characterImage'
 import type { CharInfo } from '@/shared/types'
 
-/** The overview's row-sized counterpart to CharCell.
+/** The row-sized counterpart to CharCell.
  *
- * CharCell is built for a table cell — a 60px portrait, a rank badge and a
- * win/loss column. A summary row has no space for that, so this keeps the two
- * things that identify a player at a glance (portrait and rank) and drops the
- * stats, which the leaderboard tab is one click away for.
- */
-export default function MiniCharCell({ char, label }: { char?: CharInfo | null; label: string }) {
-  if (!char?.name) return <span className="mini-char is-empty" aria-label={`${label} 없음`}>—</span>
+ * CharCell is built for a 60px table row. A ranking row is tighter, so this
+ * draws the same four things — portrait, rank badge, win rate, record — at the
+ * size a row has for them. It is the cell every ranking on the site uses, so
+ * `role` is passed through: RankList gives the grid its table semantics, and
+ * an extra wrapper to carry that role would add a sixth child to a
+ * five-column row. */
+export default function MiniCharCell({ char, label, role }: { char?: CharInfo | null; label: string; role?: string }) {
+  if (!char?.name) return <span role={role} className="mini-char is-empty" aria-label={`${label} 없음`}>—</span>
 
   const url = charImageUrl(char.name)
   const rank = char.rank_info?.name
@@ -22,7 +23,7 @@ export default function MiniCharCell({ char, label }: { char?: CharInfo | null; 
   const winRate = played > 0 ? Math.round((char.wins ?? 0) / played * 100) : null
 
   return (
-    <span className="mini-char" title={title}>
+    <span role={role} className="mini-char" title={title}>
       {/* Portrait then rank, the order CharCell uses on the leaderboard. */}
       {url
         ? <img src={url} alt={char.name} className="char-art mini-char-portrait" loading="lazy" />

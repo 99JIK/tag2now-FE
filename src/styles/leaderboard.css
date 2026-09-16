@@ -1,27 +1,6 @@
-/* The leaderboard table and its rank/tier cells. */
-
-.ranking-table { width: 100%; border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
-.ranking-table thead th { height: 38px; border-bottom: 1px solid color-mix(in srgb, var(--color-surface-tint) 10%, transparent); background: var(--color-bg-head); color: var(--color-txt-muted); font-size: var(--text-4xs); font-weight: var(--weight-strong); letter-spacing: .09em; text-transform: uppercase; }
-.ranking-table tbody tr { height: 52px; }
-.ranking-table tbody td { border-bottom: 1px solid color-mix(in srgb, var(--color-surface-tint) 5.5%, transparent); background-clip: padding-box; }
-.ranking-table tbody tr:last-child td { border-bottom: 0; }
-.ranking-table tbody tr:hover td { background-color: color-mix(in srgb, var(--color-primary) 5.5%, transparent); }
-.rank-cell { width: 46px; text-align: center; }
-.ranking-table .player-name { text-align: left; }
-.ranking-table .player-btn { min-height: 32px; max-width: 180px; padding-inline: 8px; border: 1px solid transparent; border-radius: 6px; text-align: left; }
-.ranking-table .player-btn:hover { border-color: color-mix(in srgb, var(--color-primary) 22%, transparent); background: color-mix(in srgb, var(--color-primary) 9%, transparent); }
-/* Sized to what each column holds, not split by percentages: the old 9/27/32/32
-   was written for a different set of columns and gave 전적 192px for "60%
-   1107판" while the player name --- the thing being looked up --- had 162.
-   The name takes the slack now; everything else is as wide as its content.
-   The two character cells sit together, set apart from the figures by the
-   padding below rather than by dead space inside their own columns. */
-.leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { width: 56px; }
-.leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { width: auto; }
-.leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4),
-.leaderboard-table th:nth-child(5), .leaderboard-table td:nth-child(5) { width: 172px; }
-/* Where the player's own figures end and their characters begin. */
-.leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { padding-left: 28px; }
+/* The match tables, the leaderboard's filter controls, and the shared panel
+   states. The ranking itself is no longer a table --- .rank-list in
+   overview.css draws it, on this tab as on the home page. */
 .match-table { table-layout: fixed; }
 .state-msg { display: grid; min-height: 150px; place-items: center; margin: 0; padding-block: 28px; border: 1px dashed var(--color-border-light); border-radius: 6px; background: color-mix(in srgb, var(--color-surface-tint) 1%, transparent); color: var(--color-txt-dim); font-size: var(--text-sm); font-weight: var(--weight-label); letter-spacing: .12em; text-align: center; text-transform: uppercase; }
 .state-msg p { margin: 0; }
@@ -158,18 +137,10 @@
 /* The per-player total the sorts compare. Win rate leads because it is the
    figure people rank by; the match count qualifies it — 100% of two games is
    not the same claim as 61% of nine hundred. */
-.lb-total-col { width: 116px; }
-.lb-total { display: inline-flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
-.lb-total strong { color: var(--color-txt); font-size: var(--text-sm); font-weight: var(--weight-display); }
-.lb-total span { color: var(--color-txt-faint); font-size: var(--text-3xs); font-weight: var(--weight-label); }
-.lb-total-empty { color: var(--color-txt-faint); font-size: var(--text-3xs); }
 
 /* Your own row, so finding yourself on a 344-row board is not a search. */
 /* background-color, not the shorthand: a row can be both mine and on the
    podium, and the shorthand would erase the medal wash underneath it. */
-.ranking-table .tbl-row.is-me { background-color: color-mix(in srgb, var(--color-primary) 9%, transparent); }
-.ranking-table .tbl-row.is-me:hover { background-color: color-mix(in srgb, var(--color-primary) 13%, transparent); }
-.lb-you { display: inline-flex; align-items: center; min-height: 18px; margin-left: 6px; padding: 0 6px; border: 1px solid color-mix(in srgb, var(--color-primary) 45%, transparent); border-radius: 4px; background: color-mix(in srgb, var(--color-primary) 16%, transparent); color: var(--color-primary-text); font-size: var(--text-4xs); font-weight: var(--weight-strong); vertical-align: middle; }
 
 /* At the selection cap the remaining tiles are inert. Dimmed and not-allowed
    rather than hidden: which faces exist does not change, only what can be

@@ -84,7 +84,7 @@ describe('the stylesheets cannot quietly undo the palette', () => {
   // Only rows can carry the wash, so only rows are checked — plenty of other
   // surfaces set `background` legitimately and have no image to lose.
   it.each(SHEETS)('%s.css sets row backgrounds with background-color', (_name, css) => {
-    const rowRules = css.split(/\r?\n/).filter((line) => /^\.[^{]*(?:tbl-row|overview-rank-row)[^{]*\{/.test(line.trim()))
+    const rowRules = css.split(/\r?\n/).filter((line) => /^\.[^{]*(?:tbl-row|rank-row)[^{]*\{/.test(line.trim()))
     for (const rule of rowRules) {
       expect(rule).not.toMatch(/[^-]background:/)
     }

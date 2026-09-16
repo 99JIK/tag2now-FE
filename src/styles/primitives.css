@@ -220,10 +220,8 @@
    full height of the row and squared off against its rounded corner, which
    read as a rendering seam; this one is set in from both ends so it reads as
    a mark placed on the row. `--medal` comes from the one medal table. */
-.tbl-row.is-podium .rank-cell,
-.overview-rank-row.is-podium { position: relative; }
-.tbl-row.is-podium .rank-cell::before,
-.overview-rank-row.is-podium::before {
+.rank-row.is-podium { position: relative; }
+.rank-row.is-podium::before {
   content: ''; position: absolute; left: 0; top: 9px; bottom: 9px; width: 3px;
   border-radius: 0 3px 3px 0;
   background: linear-gradient(180deg,
@@ -238,7 +236,7 @@
 }
 /* The overview rows already reserve a left border for this; without clearing
    it the bar would sit 3px in from the edge it is meant to mark. */
-.overview-rank-row.is-podium { border-left-color: transparent; }
+.rank-row.is-podium { border-left-color: transparent; }
 
 /* The medal's own colour, washed in from the bar at the left edge.
  *
@@ -257,14 +255,12 @@
  * inside a scan target is friction dressed as polish. The pointer still gets
  * an answer: the wash deepens and reaches further, which is motion the reader
  * asked for rather than motion they have to ignore. */
-.tbl-row.is-podium,
-.overview-rank-row.is-podium {
+.rank-row.is-podium {
   background-image: linear-gradient(95deg, color-mix(in srgb, var(--medal) 13%, transparent), transparent 200px);
   transition: background-color 150ms ease, background-image 180ms ease;
 }
-.ranking-table tbody tr.is-podium:hover,
-.overview-rank-row.is-podium:has(.overview-rank-btn:hover),
-.overview-rank-row.is-podium:has(.overview-rank-btn:focus-visible) {
+.rank-row.is-podium:has(.rank-btn:hover),
+.rank-row.is-podium:has(.rank-btn:focus-visible) {
   background-image: linear-gradient(95deg, color-mix(in srgb, var(--medal) 26%, transparent), transparent 260px);
 }
 

@@ -302,7 +302,7 @@ describe('Overview', () => {
     // than collapsing the row's columns.
     renderOverview()
 
-    const row = screen.getByText('SecondPlayer').closest('.overview-rank-row')
+    const row = screen.getByText('SecondPlayer').closest('.rank-row')
     expect(row?.querySelectorAll('.mini-char.is-empty')).toHaveLength(2)
   })
 
@@ -311,7 +311,7 @@ describe('Overview', () => {
     // (:nth-child), so a swap here would silently mislabel the columns.
     renderOverview()
 
-    const row = screen.getByText('TopPlayer').closest('.overview-rank-row')
+    const row = screen.getByText('TopPlayer').closest('.rank-row')
     // Portrait then rank inside each cell, main's pair before sub's — the
     // reading order the leaderboard's CharCell uses.
     const chars = row!.querySelectorAll('.mini-char img[alt]')
@@ -327,7 +327,7 @@ describe('Overview', () => {
     }))
     renderOverview()
 
-    const row = screen.getByText('42판').closest('.overview-rank-row')
+    const row = screen.getByText('42판').closest('.rank-row')
     expect(row?.querySelector('img[alt="Jin"]')).toBeInTheDocument()
   })
 

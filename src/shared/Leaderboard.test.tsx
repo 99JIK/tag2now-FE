@@ -42,10 +42,22 @@ describe('Leaderboard', () => {
     render(<Leaderboard loading={false} data={data} error={null} />)
 
     expect(screen.getByText('Total records: 42')).toBeInTheDocument()
-    expect(screen.getByText('#')).toBeInTheDocument()
-    expect(screen.getByText('Player')).toBeInTheDocument()
-expect(screen.getByText('Main')).toBeInTheDocument()
-    expect(screen.getByText('Sub')).toBeInTheDocument()
+    // An empty board shows the empty state, not a set of headings over
+    // nothing — the list is the same one the home page draws, and it says so
+    // the same way.
+    expect(screen.queryByRole('columnheader', { name: 'Player' })).not.toBeInTheDocument()
+    expect(screen.getByText('검색 결과가 없습니다')).toBeInTheDocument()
+  })
+
+  it('heads the columns once it has rows to put under them', () => {
+    const data = {
+      total_records: 1,
+      entries: [{ np_id: 'p1', rank: 1, online_name: 'Solo', player_info: null }],
+    }
+    render(<Leaderboard loading={false} data={data} error={null} />)
+
+    const headings = screen.getAllByRole('columnheader').map((h) => h.textContent)
+    expect(headings).toEqual(['#', 'Player', '전적', 'Main', 'Sub'])
   })
 
   it('renders each entry row with rank, name, chars', () => {
@@ -135,9 +147,9 @@ expect(screen.getByText('Main')).toBeInTheDocument()
     render(<Leaderboard loading={false} data={data} error={null} />)
 
     // Win rate: 75/(75+25)=75%, 60/(60+40)=60%
-    // The record is one cell at every width now — it used to be a `sm:`-gated
-    // block that simply vanished on a phone, taking the only numbers with it.
-    const records = document.querySelectorAll('.char-cell-record')
+    // The same cell the home page's rows draw: this board and the summary of
+    // it are one component now, so the record cannot differ between them.
+    const records = document.querySelectorAll('.mini-char-record')
     expect(records).toHaveLength(2)
     expect(records[0].textContent).toContain('75')
     expect(records[0].textContent).toContain('25')

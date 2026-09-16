@@ -4,7 +4,8 @@ import DailyChart from '@/shared/components/DailyChart'
 import PlayerHistoryPanel from '@/shared/components/PlayerHistoryPanel'
 import { panelStatus } from '@/shared/util/panelStatus'
 import useOverview, { OVERVIEW_TOP_N } from '@/overview/useOverview'
-import { KpiCard, OpenReservations, OverviewSection, RecentPosts, TopFiveList, type TopFiveRow } from '@/overview/component'
+import { KpiCard, OpenReservations, OverviewSection, RecentPosts } from '@/overview/component'
+import RankList, { type RankRow } from '@/shared/components/RankList'
 import type { LeaderboardEntry } from '@/shared/types'
 import type { RoomsData } from '@/match/types'
 import type { WeeklyTopPlayer } from '@/stat/types'
@@ -85,7 +86,7 @@ const charsOf = (entry?: LeaderboardEntry) => ({
 
 /** No `detail`: the list is the leaderboard's own top five in order, so the
  * rank it would show is the row position the first column already prints. */
-const leaderboardRows = (entries: LeaderboardEntry[]): TopFiveRow[] =>
+const leaderboardRows = (entries: LeaderboardEntry[]): RankRow[] =>
   entries.slice(0, OVERVIEW_TOP_N).map((e) => {
     // Across both characters, which is what the leaderboard itself sorts by —
     // the per-character rates sit in the two cells to the right, and neither
@@ -104,7 +105,7 @@ const leaderboardRows = (entries: LeaderboardEntry[]): TopFiveRow[] =>
 /** The weekly endpoint knows match counts, not characters, so the portraits are
  * joined in from the leaderboard by npid — the same pairing the stats tab makes.
  * A player outside the leaderboard simply has no character to show. */
-const weeklyRows = (players: WeeklyTopPlayer[], entries: LeaderboardEntry[]): TopFiveRow[] => {
+const weeklyRows = (players: WeeklyTopPlayer[], entries: LeaderboardEntry[]): RankRow[] => {
   const byNpid = new Map(entries.map((e) => [e.np_id, e]))
   return players.map((p) => {
     const entry = byNpid.get(p.npid)
@@ -207,14 +208,14 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
           {/* Names what is missing rather than "데이터". The list is empty both
               before the leaderboard lands and when its fetch failed, so the
               copy stops at what is absent and claims no reason for it. */}
-          <TopFiveList rows={leaderboardRows(leaderboardEntries)} detailLabel="전적" emptyMsg="리더보드 순위 없음" onSelect={setSelectedNpid} />
+          <RankList rows={leaderboardRows(leaderboardEntries)} label="리더보드 상위 5명" detailLabel="전적" emptyMsg="리더보드 순위 없음" onSelect={setSelectedNpid} />
         </OverviewSection>
 
         <OverviewSection icon={Crown} title="주간 철악귀" subtitle="최근 7일 매치 참여" linkLabel="통계" to={pathOf('stats')}>
           {/* MATCH, not 매치: the header row is otherwise #/Player/Main/Sub, and
               this app sets Latin caps as a motif elsewhere (PLAYER INSIGHTS,
               ANY MATCH). One Korean word mid-row read as an oversight. */}
-          <TopFiveList rows={weeklyRows(data?.weeklyTop ?? [], leaderboardEntries)} detailLabel="판수" emptyMsg="주간 기록 없음" onSelect={setSelectedNpid} />
+          <RankList rows={weeklyRows(data?.weeklyTop ?? [], leaderboardEntries)} label="주간 상위 5명" detailLabel="판수" emptyMsg="주간 기록 없음" onSelect={setSelectedNpid} />
         </OverviewSection>
       </div>
 

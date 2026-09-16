@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import RankList from '@/shared/components/RankList'
 import {
   ComposedChart,
   Bar,
@@ -14,8 +15,6 @@ import { panelStatus, statusBody } from "@/shared/util/panelStatus";
 import useStats, { type StatsDays} from "@/stat/useStats";
 import useWeeklyTop, { type WeeklyTopLimit} from "@/stat/useWeeklyTop";
 import PlayerHistoryPanel from "@/shared/components/PlayerHistoryPanel";
-import CharCell from "@/shared/components/CharCell";
-import { MEDAL } from '@/shared/medalColors'
 import type { HourlyActivity, WeeklyTopPlayer } from '@/stat/types'
 import DailyChart from '@/shared/components/DailyChart'
 import { DAY_START_HOUR, hourLabel, orderByDayStart } from '@/shared/dayBoundary'
@@ -132,86 +131,31 @@ function ToggleGroup<T extends string | number>({
 }
 
 function WeeklyTopTable({ data, entries, onSelect }: { data: WeeklyTopPlayer[]; entries: LeaderboardEntry[]; onSelect: (npid: string) => void }) {
-  if (data.length === 0) return <p className="state-msg">데이터 없음</p>
   const entryByNpid = new Map(entries.map((e) => [e.np_id, e]))
+  // The home page's ranking row, the same one the leaderboard tab runs at full
+  // length. This was a six-column table --- 매치 and 랭킹 on tracks of their
+  // own --- which made it the one ranking on the site with a shape nothing
+  // else used. The pair share a cell now: what they did this week, with where
+  // they stand overall behind it.
   return (
-    <div className="data-table-wrap">
-      {/* The leaderboard's own five columns: position, player, the figure the
-          list is ranked by, then the two characters. It used to run six ---
-          매치 and 랭킹 as separate tracks --- which made the one table on this
-          site that shows the same five things in a different shape. The pair
-          share a cell now, the way the leaderboard pairs a rate with the
-          matches it was taken over. */}
-      <table className="ranking-table leaderboard-table">
-        <thead>
-          <tr>
-            <th scope="col" className="tbl-th">#</th>
-            <th scope="col" className="tbl-th">Player</th>
-            <th scope="col" className="tbl-th lb-total-col">판수</th>
-            <th scope="col" className="tbl-th text-center">Main</th>
-            <th scope="col" className="tbl-th text-center">Sub</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((p, i) => {
-            const lb = entryByNpid.get(p.npid)
-            const medal = i < 3 ? MEDAL[i] : null
-            // Keyed off the leaderboard rank, not the row: a top-three player
-            // this week need not be top three overall, and the two columns say
-            // different things.
-            return (
-              <tr
-                key={p.npid}
-                className={medal ? 'tbl-row is-podium' : 'tbl-row'}
-                style={medal ? { '--medal': medal.color } as React.CSSProperties : undefined}
-              >
-                <td className="tbl-td rank-cell">
-                  <span
-                    className={`rank-no${medal ? ' is-podium' : ''}`}
-                    style={medal ? { '--medal': medal.color } as React.CSSProperties : undefined}
-                  >{i + 1}</span>
-                </td>
-                <td className="player-name">
-                  <button
-                    onClick={() => onSelect(p.npid)}
-                    className="player-btn"
-                    style={medal ? { color: medal.color } : undefined}
-                  >
-                    {p.online_name}
-                  </button>
-                </td>
-                {/* Matches this week, with the player's standing overall behind
-                    it. They were two columns; the second is context for the
-                    first, not a figure of its own, and the leaderboard sets the
-                    same pair the same way. */}
-                <td className="tbl-td lb-total-col">
-                  <span className="lb-total">
-                    <strong>{p.match_count}판</strong>
-                    {lb && <span>#{lb.rank}</span>}
-                  </span>
-                </td>
-                <td className="char-td">
-                  <CharCell
-                    name={lb?.player_info?.main_char_info?.name}
-                    rankInfo={lb?.player_info?.main_char_info?.rank_info}
-                    wins={lb?.player_info?.main_char_info?.wins}
-                    losses={lb?.player_info?.main_char_info?.losses}
-                  />
-                </td>
-                <td className="char-td">
-                  <CharCell
-                    name={lb?.player_info?.sub_char_info?.name}
-                    rankInfo={lb?.player_info?.sub_char_info?.rank_info}
-                    wins={lb?.player_info?.sub_char_info?.wins}
-                    losses={lb?.player_info?.sub_char_info?.losses}
-                  />
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+    <RankList
+      rows={data.map((p) => {
+        const lb = entryByNpid.get(p.npid)
+        return {
+          key: p.npid,
+          npid: p.npid,
+          name: p.online_name,
+          detail: `${p.match_count}판`,
+          detailSub: lb ? `#${lb.rank}` : undefined,
+          mainChar: lb?.player_info?.main_char_info,
+          subChar: lb?.player_info?.sub_char_info,
+        }
+      })}
+      label="이번 주 활동왕"
+      detailLabel="판수"
+      emptyMsg="데이터 없음"
+      onSelect={onSelect}
+    />
   )
 }
 
