@@ -57,18 +57,18 @@ test.describe('Overview', () => {
     await expect(unranked.locator('.mini-char.is-empty')).toHaveCount(2)
   })
 
-  test('keeps weekly player names clear of match counts with compact character art', async ({ page, isMobile }) => {
-    test.skip(isMobile, 'The mobile overview places the name and match count on their own row.')
+  test('gives the weekly figure its own column beside the name', async ({ page, isMobile }) => {
+    test.skip(isMobile, 'The mobile overview drops the character columns.')
     const top = page.getByRole('region', { name: '주간 철악귀' }).locator('.overview-rank-row').first()
     const nameBox = await top.locator('.overview-rank-name').boundingBox()
     const nameLabel = top.locator('.overview-rank-btn-label')
     const detailBox = await top.locator('.overview-rank-detail').boundingBox()
-    // The visible figure only. The cell also carries an sr-only label naming
-    // what the figure counts, and selecting the whole element measured that
-    // too --- three client rects for one unwrapped number.
-    const detailTextBox = await top.locator('.overview-rank-detail').evaluate(element => {
+    // The visible figure only. The cell also carries the count it was taken
+    // over and an sr-only label naming what it counts, and measuring the whole
+    // element would measure those too.
+    const figureBox = await top.locator('.overview-rank-detail strong').evaluate(element => {
       const range = document.createRange()
-      range.selectNode(element.firstChild!)
+      range.selectNodeContents(element)
       const rect = range.getBoundingClientRect()
       return { x: rect.x, width: rect.width, lines: range.getClientRects().length }
     })
@@ -79,23 +79,22 @@ test.describe('Overview', () => {
     expect(detailBox).not.toBeNull()
     expect(rankBox).not.toBeNull()
     expect(portraitBox).not.toBeNull()
-    // The count sits *under* the name, not after it. These cards are half the
-    // page wide, and a fifth column for the figure crushed the name to a
-    // character and an ellipsis; stacked, both get the column's full width.
-    expect(detailBox!.y).toBeGreaterThanOrEqual(nameBox!.y)
-    expect(detailBox!.x).toBeGreaterThanOrEqual(nameBox!.x - 1)
+    // A column of its own, between the name and the characters: the cards are
+    // stacked at full width now, so the figure can be read straight down the
+    // list under its own heading rather than hiding under each name.
+    expect(detailBox!.x).toBeGreaterThanOrEqual(nameBox!.x + nameBox!.width - 1)
+    expect(detailBox!.x + detailBox!.width).toBeLessThanOrEqual(rankBox!.x + 1)
     // Neither spills into the character cells beside them.
     expect(nameBox!.x + nameBox!.width).toBeLessThanOrEqual(rankBox!.x)
-    expect(detailTextBox.x + detailTextBox.width).toBeLessThanOrEqual(rankBox!.x)
     // Three-digit weekly counts are routine (the fixture's top player has 132),
     // and a column too narrow for them broke "132판" across two lines — which
     // a box-based check would still pass, since it measures the wrapped box.
-    expect(detailTextBox.lines).toBe(1)
+    expect(figureBox.lines).toBe(1)
     // The markup keeps the whole name; CSS shortens it with an ellipsis only
-    // when the column runs out, and the label never spills into the count.
+    // when the column runs out, and the label never spills into the figure.
     const labelBox = await nameLabel.boundingBox()
     expect(labelBox).not.toBeNull()
-    expect(labelBox!.x + labelBox!.width).toBeLessThanOrEqual(rankBox!.x)
+    expect(labelBox!.x + labelBox!.width).toBeLessThanOrEqual(detailBox!.x + 1)
     await expect(nameLabel).toHaveText('TagComboKing')
     // The same art at the same size as the leaderboard's own cell --- these two
     // lists show the same players, and differing on size made them look like

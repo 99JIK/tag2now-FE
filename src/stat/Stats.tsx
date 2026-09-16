@@ -136,15 +136,20 @@ function WeeklyTopTable({ data, entries, onSelect }: { data: WeeklyTopPlayer[]; 
   const entryByNpid = new Map(entries.map((e) => [e.np_id, e]))
   return (
     <div className="data-table-wrap">
-      <table className="ranking-table weekly-ranking-table">
+      {/* The leaderboard's own five columns: position, player, the figure the
+          list is ranked by, then the two characters. It used to run six ---
+          매치 and 랭킹 as separate tracks --- which made the one table on this
+          site that shows the same five things in a different shape. The pair
+          share a cell now, the way the leaderboard pairs a rate with the
+          matches it was taken over. */}
+      <table className="ranking-table leaderboard-table">
         <thead>
           <tr>
-            <th scope="col" className="tbl-th w-1/20 sm:w-2/20">#</th>
-            <th scope="col" className="tbl-th w-7/20 sm:w-4/20">Player</th>
-            <th scope="col" className="tbl-th text-right">매치</th>
-            <th scope="col" className="tbl-th w-1/20 sm:w-2/20">랭킹</th>
-            <th scope="col" className="tbl-th sm:w-7/20 text-center">Main</th>
-            <th scope="col" className="tbl-th sm:w-7/20 text-center">Sub</th>
+            <th scope="col" className="tbl-th">#</th>
+            <th scope="col" className="tbl-th">Player</th>
+            <th scope="col" className="tbl-th lb-total-col">판수</th>
+            <th scope="col" className="tbl-th text-center">Main</th>
+            <th scope="col" className="tbl-th text-center">Sub</th>
           </tr>
         </thead>
         <tbody>
@@ -154,7 +159,6 @@ function WeeklyTopTable({ data, entries, onSelect }: { data: WeeklyTopPlayer[]; 
             // Keyed off the leaderboard rank, not the row: a top-three player
             // this week need not be top three overall, and the two columns say
             // different things.
-            const lbMedal = lb && lb.rank <= 3 ? MEDAL[lb.rank - 1] : null
             return (
               <tr
                 key={p.npid}
@@ -176,22 +180,15 @@ function WeeklyTopTable({ data, entries, onSelect }: { data: WeeklyTopPlayer[]; 
                     {p.online_name}
                   </button>
                 </td>
-                <td className="tbl-td text-lg font-bold">{p.match_count}</td>
-                {/* The player's *leaderboard* rank, which is a different
-                    number from the weekly position in the first column. It gets
-                    the same .rank-no mark and the same medal table as that
-                    column and as the leaderboard itself — it used to be tinted
-                    through RANK_COLORS, a second medal palette (#c0c0c0 /
-                    #cd7f32) that disagreed with the one every other list uses,
-                    so second place was one silver here and another silver two
-                    tabs over. */}
-                <td className="tbl-td rank-cell w-11">
-                  {lb
-                    ? <span
-                        className={`rank-no${lbMedal ? ' is-podium' : ''}`}
-                        style={lbMedal ? { '--medal': lbMedal.color } as React.CSSProperties : undefined}
-                      >{lb.rank}</span>
-                    : '—'}
+                {/* Matches this week, with the player's standing overall behind
+                    it. They were two columns; the second is context for the
+                    first, not a figure of its own, and the leaderboard sets the
+                    same pair the same way. */}
+                <td className="tbl-td lb-total-col">
+                  <span className="lb-total">
+                    <strong>{p.match_count}판</strong>
+                    {lb && <span>#{lb.rank}</span>}
+                  </span>
                 </td>
                 <td className="char-td">
                   <CharCell
@@ -248,7 +245,7 @@ export default function Stats({ leaderboardEntries = [] }: StatsProps) {
             <div className="section-toolbar compact-toolbar">
               <div className="section-title">
                 <span className="section-icon"><Activity size={15} /></span>
-                <div><h3>접속자 흐름</h3><p>시간대와 날짜별 활성 사용자 · 하루는 06시에 시작</p></div>
+                <div><h3>접속자 흐름</h3><p>시간대와 날짜별 활성 사용자</p></div>
               </div>
               <ToggleGroup options={DAY_OPTIONS} value={days} onChange={setDays} label="기간" />
             </div>

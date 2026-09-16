@@ -8,9 +8,12 @@ export interface TopFiveRow {
    * React's list identity and free to change independently. */
   npid: string
   name: string
-  /** Right-hand figure — a match count, whatever the list ranks by. Omit it
-   * when the position column already says the same thing. */
+  /** The figure the list is ranked by — a win rate, a match count. */
   detail?: string
+  /** What that figure is out of, set behind it in the same cell: a rate means
+   * little without the matches it was taken over. The leaderboard tab pairs
+   * them the same way. */
+  detailSub?: string
   /** Absent when the player is not on the leaderboard, which is why the cells
    * render a dash rather than being dropped: the columns stay aligned. */
   mainChar?: CharInfo | null
@@ -65,7 +68,8 @@ export default function TopFiveList({ rows, detailLabel, emptyMsg = '데이터 �
                 compared straight down the list. */}
             {detailLabel && (
               <span className="overview-rank-detail">
-                {row.detail ?? '—'}
+                <strong>{row.detail ?? '—'}</strong>
+                {row.detailSub && <span>{row.detailSub}</span>}
                 <span className="sr-only"> {detailLabel}</span>
               </span>
             )}

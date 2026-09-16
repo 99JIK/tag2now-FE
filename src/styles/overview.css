@@ -85,7 +85,7 @@
    ranked-by figure moved under the name, where it has room. */
 /* 128px a character, not 100: the cell carries a portrait, a rank banner and
    the record now, and at 100 the record wrapped under the banner on every row. */
-.overview-rank-head, .overview-rank-row { display: grid; align-items: center; gap: 6px; grid-template-columns: 22px minmax(0,1fr) 64px 116px 116px; }
+.overview-rank-head, .overview-rank-row { display: grid; align-items: center; gap: 6px; grid-template-columns: 22px minmax(0,1fr) 108px 116px 116px; }
 /* The leaderboard list ranks by row position, so it renders no detail cell
    and drops that track — the name column takes the freed width. */
 
@@ -96,7 +96,12 @@
 .overview-rank-head > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Matches the inset the name button's hover frame sits at. */
 .overview-rank-head > :nth-child(2) { padding-left: 5px; }
-.overview-rank-head > :nth-child(3) { text-align: right; }
+/* Centred over its track, like every heading on the leaderboard table this
+   list summarises --- and the figure under it is centred too. Ranged right,
+   the pair sat hard against the first character cell while the columns on
+   either side were centred, so the one column the two lists differed on was
+   the one carrying the figure they are ranked by. */
+.overview-rank-head > :nth-child(3) { text-align: center; }
 .overview-rank-head > :nth-child(4), .overview-rank-head > :nth-child(5) { text-align: center; }
 .overview-rank-list.has-no-detail .overview-rank-head > :nth-child(3) { text-align: center; }
 
@@ -169,9 +174,12 @@
 /* What the list is ranked by, said quietly. In primary red at full weight it
    sat under the name looking like a warning about the player rather than the
    figure that put them there. */
-/* Right-aligned in its own track, so the figures line up down the list and
-   can be read without reading the rows. */
-.overview-rank-detail { color: var(--color-txt); font-size: var(--text-2xs); font-weight: var(--weight-row); text-align: right; font-variant-numeric: tabular-nums; }
+/* The same pairing the leaderboard tab uses for the same fact: the figure at
+   reading size with what it was taken over riding behind it. Right-aligned in
+   its own track, so the column can be read down without reading the rows. */
+.overview-rank-detail { display: inline-flex; align-items: baseline; justify-content: center; gap: 5px; font-variant-numeric: tabular-nums; }
+.overview-rank-detail strong { color: var(--color-txt); font-size: var(--text-sm); font-weight: var(--weight-display); }
+.overview-rank-detail > span:not(.sr-only) { color: var(--color-txt-faint); font-size: var(--text-3xs); font-weight: var(--weight-label); }
 
 .overview-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .overview-list-row { display: flex; min-height: 42px; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; background: var(--color-bg-row-alt); }

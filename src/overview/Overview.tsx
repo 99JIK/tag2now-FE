@@ -90,12 +90,13 @@ const leaderboardRows = (entries: LeaderboardEntry[]): TopFiveRow[] =>
     // Across both characters, which is what the leaderboard itself sorts by —
     // the per-character rates sit in the two cells to the right, and neither
     // of them answers "how does this player do".
-    const { winRate } = totals(e)
+    const { winRate, matches } = totals(e)
     return {
       key: e.np_id,
       npid: e.np_id,
       name: e.online_name,
       detail: winRate === null ? undefined : `${Math.round(winRate * 100)}%`,
+      detailSub: matches > 0 ? `${matches}판` : undefined,
       ...charsOf(e),
     }
   })
@@ -105,13 +106,20 @@ const leaderboardRows = (entries: LeaderboardEntry[]): TopFiveRow[] =>
  * A player outside the leaderboard simply has no character to show. */
 const weeklyRows = (players: WeeklyTopPlayer[], entries: LeaderboardEntry[]): TopFiveRow[] => {
   const byNpid = new Map(entries.map((e) => [e.np_id, e]))
-  return players.map((p) => ({
-    key: p.npid,
-    npid: p.npid,
-    name: p.online_name,
-    detail: `${p.match_count}판`,
-    ...charsOf(byNpid.get(p.npid)),
-  }))
+  return players.map((p) => {
+    const entry = byNpid.get(p.npid)
+    return {
+      key: p.npid,
+      npid: p.npid,
+      name: p.online_name,
+      detail: `${p.match_count}판`,
+      // Where they stand overall, behind what they did this week --- the same
+      // pair the stats tab's table sets, so the summary and the full list read
+      // the same way.
+      detailSub: entry ? `#${entry.rank}` : undefined,
+      ...charsOf(entry),
+    }
+  })
 }
 
 export default function Overview({ rooms, roomsLoading, leaderboardEntries = [], leaderboardTotal }: OverviewProps) {
@@ -199,7 +207,7 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
           {/* Names what is missing rather than "데이터". The list is empty both
               before the leaderboard lands and when its fetch failed, so the
               copy stops at what is absent and claims no reason for it. */}
-          <TopFiveList rows={leaderboardRows(leaderboardEntries)} detailLabel="승률" emptyMsg="리더보드 순위 없음" onSelect={setSelectedNpid} />
+          <TopFiveList rows={leaderboardRows(leaderboardEntries)} detailLabel="전적" emptyMsg="리더보드 순위 없음" onSelect={setSelectedNpid} />
         </OverviewSection>
 
         <OverviewSection icon={Crown} title="주간 철악귀" subtitle="최근 7일 매치 참여" linkLabel="통계" to={pathOf('stats')}>

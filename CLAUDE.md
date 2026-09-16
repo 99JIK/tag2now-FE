@@ -131,10 +131,16 @@ the cards' h3) without spending a toolbar's height above the figures.
   every 5s poll.
 
 `MiniCharCell` is the row-sized counterpart to `shared/components/CharCell`:
-same portrait and rank badge, no win/loss column. Below 760px the row wraps to
-two lines and positions the two characters by **source order**
-(`:nth-of-type`), so main must render before sub — `Overview.test.tsx` pins
-that.
+the same portrait, rank badge, win rate and record, drawn to fit a summary row.
+
+The row is a grid, and below 760px it drops to the four columns the leaderboard
+table uses on a phone — `#`, player, main, sub — with the ranked-by figure
+moved under the name. Five tracks do not fit there: the characters and the
+figure took 262 of the row's 298px and left the name 36. Both character cells
+are placed by **`:nth-child`, never `:nth-of-type`** — every child of the row is
+a `<span>`, so by type they all count as one, and a `:nth-of-type` rule silently
+selects the position cell instead. `Overview.test.tsx` pins main rendering
+before sub.
 
 ### Routing
 

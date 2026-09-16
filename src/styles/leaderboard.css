@@ -10,15 +10,18 @@
 .ranking-table .player-name { text-align: left; }
 .ranking-table .player-btn { min-height: 32px; max-width: 180px; padding-inline: 8px; border: 1px solid transparent; border-radius: 6px; text-align: left; }
 .ranking-table .player-btn:hover { border-color: color-mix(in srgb, var(--color-primary) 22%, transparent); background: color-mix(in srgb, var(--color-primary) 9%, transparent); }
-.weekly-ranking-table th:nth-child(3), .weekly-ranking-table td:nth-child(3) { text-align: right; }
-.leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { width: 9%; }
-.leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { width: 27%; }
-.leaderboard-table th:nth-child(3), .leaderboard-table td:nth-child(3), .leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { width: 32%; }
-.weekly-ranking-table th:nth-child(1), .weekly-ranking-table td:nth-child(1) { width: 8%; }
-.weekly-ranking-table th:nth-child(2), .weekly-ranking-table td:nth-child(2) { width: 22%; }
-.weekly-ranking-table th:nth-child(3), .weekly-ranking-table td:nth-child(3) { width: 10%; }
-.weekly-ranking-table th:nth-child(4), .weekly-ranking-table td:nth-child(4) { width: 9%; }
-.weekly-ranking-table th:nth-child(5), .weekly-ranking-table td:nth-child(5), .weekly-ranking-table th:nth-child(6), .weekly-ranking-table td:nth-child(6) { width: 25.5%; }
+/* Sized to what each column holds, not split by percentages: the old 9/27/32/32
+   was written for a different set of columns and gave 전적 192px for "60%
+   1107판" while the player name --- the thing being looked up --- had 162.
+   The name takes the slack now; everything else is as wide as its content.
+   The two character cells sit together, set apart from the figures by the
+   padding below rather than by dead space inside their own columns. */
+.leaderboard-table th:nth-child(1), .leaderboard-table td:nth-child(1) { width: 56px; }
+.leaderboard-table th:nth-child(2), .leaderboard-table td:nth-child(2) { width: auto; }
+.leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4),
+.leaderboard-table th:nth-child(5), .leaderboard-table td:nth-child(5) { width: 172px; }
+/* Where the player's own figures end and their characters begin. */
+.leaderboard-table th:nth-child(4), .leaderboard-table td:nth-child(4) { padding-left: 28px; }
 .match-table { table-layout: fixed; }
 .state-msg { display: grid; min-height: 150px; place-items: center; margin: 0; padding-block: 28px; border: 1px dashed var(--color-border-light); border-radius: 6px; background: color-mix(in srgb, var(--color-surface-tint) 1%, transparent); color: var(--color-txt-dim); font-size: var(--text-sm); font-weight: var(--weight-label); letter-spacing: .12em; text-align: center; text-transform: uppercase; }
 .state-msg p { margin: 0; }
@@ -155,7 +158,7 @@
 /* The per-player total the sorts compare. Win rate leads because it is the
    figure people rank by; the match count qualifies it — 100% of two games is
    not the same claim as 61% of nine hundred. */
-.lb-total-col { width: 92px; }
+.lb-total-col { width: 116px; }
 .lb-total { display: inline-flex; align-items: baseline; gap: 6px; font-variant-numeric: tabular-nums; }
 .lb-total strong { color: var(--color-txt); font-size: var(--text-sm); font-weight: var(--weight-display); }
 .lb-total span { color: var(--color-txt-faint); font-size: var(--text-3xs); font-weight: var(--weight-label); }
