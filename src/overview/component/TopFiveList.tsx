@@ -19,10 +19,11 @@ export interface TopFiveRow {
 
 interface TopFiveListProps {
   rows: TopFiveRow[]
-  /** Names what `row.detail` counts, e.g. "매치". It is read to the figure
-   * rather than shown as a column header: these cards are half the width of
-   * the leaderboard, and a fifth column crushed the player name to a single
-   * character. The figure now sits under the name instead. */
+  /** The heading over `row.detail` — 승률, 판수. It is a real column now: the
+   * two cards used to share a row, where a fifth track crushed the name to a
+   * character and an ellipsis, so the figure hid under the name instead. They
+   * are stacked at full width, and a figure with a heading over it can be
+   * compared straight down the list. */
   detailLabel?: string
   emptyMsg?: string
   /** Opens the player history panel, the same way the leaderboard does. */
@@ -35,7 +36,7 @@ export default function TopFiveList({ rows, detailLabel, emptyMsg = '데이터 �
   return (
     <ol className={`overview-rank-list${detailLabel ? '' : ' has-no-detail'}`} aria-label={`상위 ${rows.length}명`}>
       <li className="overview-rank-head" aria-hidden="true">
-        <span>#</span><span>Player</span><span>Main</span><span>Sub</span>
+        <span>#</span><span>Player</span>{detailLabel && <span>{detailLabel}</span>}<span>Main</span><span>Sub</span>
       </li>
       {rows.map((row, i) => {
         const medal = i < 3 ? MEDAL[i] : null
@@ -59,13 +60,15 @@ export default function TopFiveList({ rows, detailLabel, emptyMsg = '데이터 �
               <button type="button" className="player-btn overview-rank-btn" onClick={() => onSelect(row.npid)} title={row.name}>
                 <span className="overview-rank-btn-label">{row.name}</span>
               </button>
-              {row.detail && (
-                <span className="overview-rank-detail">
-                  {row.detail}
-                  {detailLabel && <span className="sr-only"> {detailLabel}</span>}
-                </span>
-              )}
             </span>
+            {/* Its own column, under its own heading, so the figure can be
+                compared straight down the list. */}
+            {detailLabel && (
+              <span className="overview-rank-detail">
+                {row.detail ?? '—'}
+                <span className="sr-only"> {detailLabel}</span>
+              </span>
+            )}
             <MiniCharCell char={row.mainChar} label="메인" />
             <MiniCharCell char={row.subChar} label="서브" />
           </li>

@@ -12,6 +12,7 @@ import { formatGroupName, GROUP_ORDER } from '@/config/tabConfig'
 import type { ApiReservation } from '@/reservation/reservationApi'
 import { isJoinable, kstTimeFormat } from '@/reservation/reservationLabels'
 import { pathOf } from '@/config/routes'
+import { totals } from '@/shared/util/leaderboardFilter'
 import { CardGridSkeleton, ListSkeleton } from '@/shared/components/Skeleton'
 
 interface OverviewProps {
@@ -91,12 +92,19 @@ const charsOf = (entry?: LeaderboardEntry) => ({
 /** No `detail`: the list is the leaderboard's own top five in order, so the
  * rank it would show is the row position the first column already prints. */
 const leaderboardRows = (entries: LeaderboardEntry[]): TopFiveRow[] =>
-  entries.slice(0, OVERVIEW_TOP_N).map((e) => ({
-    key: e.np_id,
-    npid: e.np_id,
-    name: e.online_name,
-    ...charsOf(e),
-  }))
+  entries.slice(0, OVERVIEW_TOP_N).map((e) => {
+    // Across both characters, which is what the leaderboard itself sorts by —
+    // the per-character rates sit in the two cells to the right, and neither
+    // of them answers "how does this player do".
+    const { winRate } = totals(e)
+    return {
+      key: e.np_id,
+      npid: e.np_id,
+      name: e.online_name,
+      detail: winRate === null ? undefined : `${Math.round(winRate * 100)}%`,
+      ...charsOf(e),
+    }
+  })
 
 /** The weekly endpoint knows match counts, not characters, so the portraits are
  * joined in from the leaderboard by npid — the same pairing the stats tab makes.
@@ -186,20 +194,25 @@ export default function Overview({ rooms, roomsLoading, leaderboardEntries = [],
 
       {/* Kept below the chart: a ranking is slow-moving reference data with a
           tab of its own one click away, and these two lists are twice the
-          height of the cards above (5 x 66px rows). */}
-      <div className="overview-grid">
+          height of the cards above (5 x 66px rows).
+          Stacked, not side by side: each row carries a name, two portraits,
+          two rank banners and two records, and splitting the width between two
+          cards left the name 84px --- "yeheonhoofamily" rendered as "yehe...".
+          Full width gives it ~490px, and the pair are read one after the other
+          anyway. */}
+      <div className="overview-grid is-stacked">
         <OverviewSection icon={Trophy} title="리더보드 TOP 5" subtitle="현재 상위 랭커" linkLabel="리더보드" to={pathOf('leaderboard')}>
           {/* Names what is missing rather than "데이터". The list is empty both
               before the leaderboard lands and when its fetch failed, so the
               copy stops at what is absent and claims no reason for it. */}
-          <TopFiveList rows={leaderboardRows(leaderboardEntries)} emptyMsg="리더보드 순위 없음" onSelect={setSelectedNpid} />
+          <TopFiveList rows={leaderboardRows(leaderboardEntries)} detailLabel="승률" emptyMsg="리더보드 순위 없음" onSelect={setSelectedNpid} />
         </OverviewSection>
 
         <OverviewSection icon={Crown} title="주간 철악귀" subtitle="최근 7일 매치 참여" linkLabel="통계" to={pathOf('stats')}>
           {/* MATCH, not 매치: the header row is otherwise #/Player/Main/Sub, and
               this app sets Latin caps as a motif elsewhere (PLAYER INSIGHTS,
               ANY MATCH). One Korean word mid-row read as an oversight. */}
-          <TopFiveList rows={weeklyRows(data?.weeklyTop ?? [], leaderboardEntries)} detailLabel="MATCH" emptyMsg="주간 기록 없음" onSelect={setSelectedNpid} />
+          <TopFiveList rows={weeklyRows(data?.weeklyTop ?? [], leaderboardEntries)} detailLabel="판수" emptyMsg="주간 기록 없음" onSelect={setSelectedNpid} />
         </OverviewSection>
       </div>
 

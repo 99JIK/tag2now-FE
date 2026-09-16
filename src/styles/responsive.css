@@ -21,14 +21,18 @@
      cell beside it.
      Reading a summary row is the same job on a phone as on a desktop, so it is
      now the same row. */
-  .overview-rank-row { min-height: 0; padding: 6px 8px; gap: 6px; grid-template-columns: 18px minmax(0,1fr) 92px 92px; }
-  .overview-rank-head { grid-template-columns: 18px minmax(0,1fr) 92px 92px; }
+  .overview-rank-row { min-height: 0; padding: 6px 8px; gap: 6px; grid-template-columns: 18px minmax(0,1fr) 44px 74px 74px; }
+  .overview-rank-head { grid-template-columns: 18px minmax(0,1fr) 44px 74px 74px; }
   .overview-rank-list.has-no-detail .overview-rank-row,
-  .overview-rank-list.has-no-detail .overview-rank-head { grid-template-columns: 18px minmax(0,1fr) 92px 92px; }
+  .overview-rank-list.has-no-detail .overview-rank-head { grid-template-columns: 18px minmax(0,1fr) 44px 74px 74px; }
   /* Sized so a portrait and a banner fit the 92px track together. */
   .mini-char { gap: 6px; }
-  .mini-char-portrait { height: 40px; }
-  .mini-char-rank { width: 56px; height: 25px; }
+  .mini-char-portrait { height: 36px; }
+  .mini-char-rank { width: 48px; height: 22px; }
+  /* The rate stays, the raw record does not. Two full cells took 216px of a
+     336px row and left the name 65px --- and the rate is the figure being
+     compared; the W/L is one tap away on the leaderboard. */
+  .mini-char-wl { display: none; }
   .kpi-card-value { font-size: var(--text-lg); }
   .app-shell { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
   /* 1fr for the brand, auto for the profile --- not the reverse. Under

@@ -52,6 +52,9 @@
 .overview-chart { padding: 12px 8px 8px; }
 
 .overview-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+/* One card per row. The ranking lists carry far more per row than the cards
+   above them, and the width a name needs comes out of the same track. */
+.overview-grid.is-stacked { grid-template-columns: minmax(0, 1fr); }
 .overview-section { display: flex; min-width: 0; flex-direction: column; padding: 12px; border: 1px solid var(--color-border); border-radius: 6px; background: color-mix(in srgb, var(--color-surface-tint) 1.5%, transparent); }
 .overview-section .section-toolbar { min-height: 40px; margin-bottom: 10px; padding-bottom: 10px; }
 /* The body takes whatever the card has left. Two cards sit side by side in a
@@ -72,7 +75,9 @@
    Five did not fit: these cards are half the page wide, and 26+48+118+118 plus
    gaps left 38px for the player name — one character and an ellipsis. The
    ranked-by figure moved under the name, where it has room. */
-.overview-rank-head, .overview-rank-row { display: grid; align-items: center; gap: 6px; grid-template-columns: 22px minmax(0,1fr) 100px 100px; }
+/* 128px a character, not 100: the cell carries a portrait, a rank banner and
+   the record now, and at 100 the record wrapped under the banner on every row. */
+.overview-rank-head, .overview-rank-row { display: grid; align-items: center; gap: 6px; grid-template-columns: 22px minmax(0,1fr) 64px 116px 116px; }
 /* The leaderboard list ranks by row position, so it renders no detail cell
    and drops that track — the name column takes the freed width. */
 
@@ -83,11 +88,13 @@
 .overview-rank-head > * { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Matches the inset the name button's hover frame sits at. */
 .overview-rank-head > :nth-child(2) { padding-left: 5px; }
-.overview-rank-head > :nth-child(3), .overview-rank-head > :nth-child(4) { text-align: center; }
+.overview-rank-head > :nth-child(3) { text-align: right; }
+.overview-rank-head > :nth-child(4), .overview-rank-head > :nth-child(5) { text-align: center; }
+.overview-rank-list.has-no-detail .overview-rank-head > :nth-child(3) { text-align: center; }
 
-/* Without the detail cell Main and Sub shift left by one child. */
-.overview-rank-list.has-no-detail .overview-rank-head > :nth-child(3),
-.overview-rank-list.has-no-detail .overview-rank-head > :nth-child(4) { text-align: center; }
+/* A list with nothing to rank by drops the track rather than leaving a hole. */
+.overview-rank-list.has-no-detail .overview-rank-head,
+.overview-rank-list.has-no-detail .overview-rank-row { grid-template-columns: 22px minmax(0,1fr) 116px 116px; }
 /* Positioned so the name button's overlay can stretch across it. */
 .overview-rank-row { position: relative; min-height: 60px; padding: 0 8px; border-left: 3px solid transparent; border-radius: 4px; background-color: var(--color-bg-row-alt); transition: background-color 150ms ease; }
 /* The overlay carries the hover, so pointing anywhere on the row lights both
@@ -110,6 +117,14 @@
    these two lists show the same art and differing on size made them look like
    different data. */
 .mini-char-rank { width: var(--rank-art-w); height: var(--rank-art-h); flex: 0 0 auto; object-fit: cover; }
+/* Rank over the record, beside the portrait --- CharCell's arrangement at the
+   size a summary row has for it. Wraps the same way the profile card's does,
+   so a narrow column stacks the two instead of pushing the record out. */
+.mini-char-meta { display: inline-flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 1px; }
+.mini-char-record { display: inline-flex; min-width: 0; flex-wrap: wrap; align-items: baseline; gap: 0 4px; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.mini-char-wr { color: var(--color-txt); font-size: var(--text-2xs); font-weight: var(--weight-strong); }
+.mini-char-wl { color: var(--color-txt-faint); font-size: var(--text-5xs); font-weight: var(--weight-label); white-space: nowrap; }
+.mini-char-wl span { opacity: .7; }
 .mini-char-portrait { height: 46px; border-radius: 4px; }
 .mini-char-name { max-width: 100%; overflow: hidden; color: var(--color-txt-dim); font-size: var(--text-4xs); text-overflow: ellipsis; white-space: nowrap; }
 .overview-rank-name { min-width: 0; overflow: hidden; color: var(--color-txt); font-size: var(--text-sm); font-weight: var(--weight-row); text-overflow: ellipsis; white-space: nowrap; }
@@ -143,7 +158,12 @@
 /* Under the name, not beside it. It carries --color-primary-text because it is
    what the list is ranked by — the same job the colour does for .overview-time. */
 .overview-rank-name { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 1px; }
-.overview-rank-detail { color: var(--color-primary-text); font-size: var(--text-2xs); font-weight: var(--weight-strong); font-variant-numeric: tabular-nums; }
+/* What the list is ranked by, said quietly. In primary red at full weight it
+   sat under the name looking like a warning about the player rather than the
+   figure that put them there. */
+/* Right-aligned in its own track, so the figures line up down the list and
+   can be read without reading the rows. */
+.overview-rank-detail { color: var(--color-txt); font-size: var(--text-2xs); font-weight: var(--weight-row); text-align: right; font-variant-numeric: tabular-nums; }
 
 .overview-list { display: flex; flex-direction: column; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .overview-list-row { display: flex; min-height: 42px; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 4px; background: var(--color-bg-row-alt); }
