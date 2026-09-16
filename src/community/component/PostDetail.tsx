@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import ConfirmDialog from '@/shared/components/ConfirmDialog'
+import useConfirm from '@/shared/hooks/useConfirm'
 import YouTubeVideo from './YouTubeVideo'
 import CreatePostForm from './CreatePostForm'
 import { formatTimeAgo } from '@/shared/util/timeFormat'
-import { thumbPost, createComment, deletePost, updatePost } from '@/community/communityApi'
+import { thumbPost, createComment, deletePost, updatePost, type PostInput } from '@/community/communityApi'
 import PostTypeBadge from './PostTypeBadge'
 import CommentTree from './CommentTree'
 import type { LeaderboardEntry } from "@/shared/types";
@@ -25,10 +27,11 @@ export default function PostDetail({ post, username, onBack, onRefresh, ensureId
   const [submitting, setSubmitting] = useState(false)
   const [thumbing, setThumbing] = useState(false)
   const [editing, setEditing] = useState(false)
+  const { confirm, ...confirmDialog } = useConfirm()
 
-  const handleUpdate = async (title: string, body: string, postType: string, youtubeVideoId?: string) => {
+  const handleUpdate = async (input: PostInput) => {
     await ensureIdentity()
-    await updatePost(post.id, title, body, postType, youtubeVideoId)
+    await updatePost(post.id, input)
     setEditing(false)
     onRefresh()
   }
@@ -59,28 +62,35 @@ export default function PostDetail({ post, username, onBack, onRefresh, ensureId
   }
 
   const handleDelete = async () => {
-    if (!confirm('이 게시글을 삭제하시겠습니까?')) return
-    try {
-      await ensureIdentity()
-      await deletePost(post.id)
-      onDeleted()
-    } catch (_) {}
+    const agreed = await confirm({
+      title: '게시글을 삭제할까요?',
+      body: '삭제한 글과 댓글은 되돌릴 수 없습니다.',
+      confirmLabel: '삭제',
+    })
+    if (!agreed) return
+    // Rejections reach the global unhandledrejection handler, which toasts the
+    // reason. Swallowing them here left a failed delete looking like nothing
+    // had happened at all.
+    await ensureIdentity()
+    await deletePost(post.id)
+    onDeleted()
   }
 
   if (editing) return <CreatePostForm initialPost={post} onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
 
   return (
     <article className="post-detail">
+      {confirmDialog.request && <ConfirmDialog {...confirmDialog} request={confirmDialog.request} />}
       <button
         onClick={onBack}
-        className="mb-4 inline-flex min-h-8 items-center gap-1.5 bg-transparent border-0 text-primary-text text-xs font-bold cursor-pointer hover:text-white"
+        className="mb-4 inline-flex min-h-8 items-center gap-1.5 bg-transparent border-0 text-primary-text text-xs font-bold cursor-pointer hover:text-txt"
       >
         <ArrowLeft size={14} aria-hidden="true" /> 목록
       </button>
 
       <header className="post-detail-header">
         <div className="flex items-center gap-2 mb-2">
-          <PostTypeBadge postType={post.post_type} size="md" />
+          <PostTypeBadge postType={post.post_type} characters={post.characters ?? []} size="md" />
           <span className="text-sm text-txt-dim">{formatTimeAgo(post.created_at)}</span>
           {username && post.author === username && (
             <div className="ml-auto flex gap-2">

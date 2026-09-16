@@ -4,7 +4,7 @@ import PostDetail from './PostDetail'
 import { updatePost } from '@/community/communityApi'
 
 vi.mock('@/community/communityApi', () => ({ updatePost: vi.fn(), createComment: vi.fn(), thumbPost: vi.fn(), deletePost: vi.fn() }))
-const post = { id: 1, author: 'owner', title: '원래 제목', body: '원래 본문', post_type: '자유', youtube_video_id: 'M7lc1UVf-VE', thumbs_up: 0, thumbs_down: 0, created_at: '2026-09-11T00:00:00Z', comments: [] }
+const post = { id: 1, author: 'owner', title: '원래 제목', body: '원래 본문', post_type: '자유', characters: [], youtube_video_id: 'M7lc1UVf-VE', thumbs_up: 0, thumbs_down: 0, created_at: '2026-09-11T00:00:00Z', comments: [] }
 function setup(username = 'owner') {
   const refresh = vi.fn()
   render(<PostDetail post={post} username={username} onBack={vi.fn()} onRefresh={refresh} ensureIdentity={vi.fn().mockResolvedValue(username)} onDeleted={vi.fn()} />)
@@ -33,7 +33,9 @@ describe('edit post', () => {
     fireEvent.change(screen.getByLabelText('게시글 제목'), { target: { value: '새 제목' } })
     fireEvent.click(screen.getByRole('button', { name: 'YouTube 영상 제거' }))
     fireEvent.click(screen.getByRole('button', { name: '저장' }))
-    await waitFor(() => expect(updatePost).toHaveBeenCalledWith(1, '새 제목', post.body, '자유', undefined))
+    await waitFor(() => expect(updatePost).toHaveBeenCalledWith(1, {
+      title: '새 제목', body: post.body, postType: '자유', characters: [], youtubeVideoId: undefined,
+    }))
     await waitFor(() => expect(refresh).toHaveBeenCalled())
   })
   it('retains entered values when saving fails', async () => {

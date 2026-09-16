@@ -2,7 +2,7 @@ import { formatTimeAgo } from '@/shared/util/timeFormat'
 import CharacterGridPicker from '@/shared/components/CharacterGridPicker'
 import PostTypeBadge from './PostTypeBadge'
 import type { LeaderboardEntry} from "@/shared/types";
-import { POST_TYPES } from "@/community/types";
+import { MAX_POST_CHARACTERS, POST_TYPES } from "@/community/types";
 import type {PostSummary} from "@/community/types";
 import AuthorBadge from './AuthorBadge'
 import { ChevronLeft, ChevronRight, MessageSquare, MessagesSquare, PenLine, RefreshCw, SlidersHorizontal, ThumbsDown, ThumbsUp } from 'lucide-react'
@@ -16,6 +16,9 @@ interface PostListProps {
   error: string | null
   postType: string
   onPostTypeChange: (type: string) => void
+  /** Characters the list is filtered to, at most two. */
+  characters: string[]
+  onCharactersChange: (characters: string[]) => void
   onPageChange: (page: number) => void
   onSelectPost: (id: number) => void
   onRefresh: () => void
@@ -25,7 +28,8 @@ interface PostListProps {
 
 export default function PostList({
   posts, total, page, pageSize, loading, error,
-  postType, onPostTypeChange, onPageChange, onSelectPost, onRefresh, onWrite, leaderboardEntries,
+  postType, onPostTypeChange, characters, onCharactersChange,
+  onPageChange, onSelectPost, onRefresh, onWrite, leaderboardEntries,
 }: PostListProps) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
@@ -70,9 +74,26 @@ export default function PostList({
         </div>
       </div>
 
+      {/* Filters the list by character, independently of the category above —
+          the two used to be the same control, so narrowing to 공략 and
+          narrowing to Jin were mutually exclusive. */}
       <div className="character-filter">
-        <CharacterGridPicker value={postType} onChange={onPostTypeChange} defaultValue="" />
+        <CharacterGridPicker
+          selected={characters}
+          onToggle={(name) => onCharactersChange(
+            characters.includes(name)
+              ? characters.filter((entry) => entry !== name)
+              : characters.length >= MAX_POST_CHARACTERS ? characters : [...characters, name],
+          )}
+          max={MAX_POST_CHARACTERS}
+        />
       </div>
+      {characters.length > 0 && (
+        <p className="selected-characters" role="status">
+          <strong>{characters.join(', ')}</strong> 관련 글만 표시 중
+          <button type="button" className="btn-ghost" onClick={() => onCharactersChange([])}>해제</button>
+        </p>
+      )}
 
       {loading && <p className="state-msg">로딩 중...</p>}
       {error && <p className="state-msg error">{error}</p>}
@@ -87,23 +108,32 @@ export default function PostList({
             <button
               key={post.id}
               onClick={() => onSelectPost(post.id)}
-              aria-label={`${post.title} — ${post.post_type}`}
+              aria-label={[post.title, post.post_type, ...(post.characters ?? [])].join(' — ')}
               className="post-row"
             >
-              <span className="w-14 shrink-0 flex items-center justify-center">
-                <PostTypeBadge postType={post.post_type} />
+              <span className="post-row-tags">
+                <PostTypeBadge postType={post.post_type} characters={post.characters ?? []} />
               </span>
-              <div className="flex flex-1 min-w-0 items-center font-bold">
-                <span className="text-sm text-txt truncate">{post.title}</span>
-                { post.comment_count > 0 && (<span className="ml-1 inline-flex items-center gap-0.5 text-txt-dim"><MessageSquare size={11} />{post.comment_count}</span>)}
-              </div>
-              <AuthorBadge name={post.author} entries={leaderboardEntries} className="hidden sm:inline-flex shrink-0" />
-              <span className="sm:hidden text-xs truncate max-w-20 sm:max-w-none">{post.author}</span>
-              <span className="hidden sm:flex gap-2 text-xs text-txt-dim shrink-0">
-                <span className="inline-flex items-center gap-1 text-primary-text"><ThumbsUp size={12} /> {post.thumbs_up}</span>
-                <span className="inline-flex items-center gap-1"><ThumbsDown size={12} /> {post.thumbs_down}</span>
+              <span className="post-row-title">{post.title}</span>
+              <AuthorBadge name={post.author} entries={leaderboardEntries} className="post-row-author" />
+              {/* One cluster for how the post is doing. The comment count used
+                  to be welded to the title and the two votes sat at the far
+                  end, so three figures of the same kind were read in two
+                  places. A figure only appears once it is not zero: every row
+                  printed "☝ 0 ☟ 0", which is the same as saying nothing while
+                  taking the space and the eye of something that says a lot. */}
+              <span className="post-row-stats">
+                {post.comment_count > 0 && (
+                  <span className="post-stat"><MessageSquare size={11} aria-hidden="true" />{post.comment_count}<span className="sr-only"> 댓글</span></span>
+                )}
+                {post.thumbs_up > 0 && (
+                  <span className="post-stat is-up"><ThumbsUp size={11} aria-hidden="true" />{post.thumbs_up}<span className="sr-only"> 추천</span></span>
+                )}
+                {post.thumbs_down > 0 && (
+                  <span className="post-stat"><ThumbsDown size={11} aria-hidden="true" />{post.thumbs_down}<span className="sr-only"> 비추천</span></span>
+                )}
               </span>
-              <span className="hidden sm:inline text-xs text-txt-dim shrink-0">{formatTimeAgo(post.created_at)}</span>
+              <span className="post-row-time">{formatTimeAgo(post.created_at)}</span>
             </button>
           ))}
         </div>

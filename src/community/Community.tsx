@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import useCommunity from "@/community/useCommunity";
 import { pathOf, postPath } from "@/config/routes";
-import {createPost} from "@/community/communityApi";
+import {createPost, type PostInput} from "@/community/communityApi";
 import type { LeaderboardEntry} from "@/shared/types";
 import { PostList, PostDetail, CreatePostForm } from "@/community/component";
 import useIdentity from "@/shared/hooks/useIdentity";
+import { statusBody } from "@/shared/util/panelStatus";
+import { ListSkeleton } from "@/shared/components/Skeleton";
 
 /** 'detail' is not in this union: which post is open is the URL's answer, not
  * a second copy of it here. 'create' is a genuinely local mode — there is
@@ -23,6 +25,7 @@ export default function Community({ leaderboardEntries }: CommunityProps) {
   const { getUsername, ensureIdentity } = useIdentity()
   const [view, setView] = useState<View>('list')
   const [postType, setPostType] = useState('')
+  const [characters, setCharacters] = useState<string[]>([])
 
   // A post id in the path is the whole trigger for the detail view, so it works
   // the same whether the reader clicked a row, pressed Back, or opened a shared
@@ -34,9 +37,15 @@ export default function Community({ leaderboardEntries }: CommunityProps) {
   // mode, which navigating away from the form has already left behind.
   const mode: 'detail' | View = showDetail ? 'detail' : view
 
+  // Every reload goes through here, so the filters cannot be dropped by a
+  // caller that forgot one — which is what happened when the character filter
+  // was added and six of the seven call sites still passed only the category.
+  const reload = (page = community.page) =>
+    community.loadPosts(page, postType || undefined, characters).then()
+
   useEffect(() => {
-    community.loadPosts(1, postType || undefined).then()
-  }, [postType])
+    reload(1)
+  }, [postType, characters])
 
   useEffect(() => {
     if (!showDetail) return
@@ -50,7 +59,7 @@ export default function Community({ leaderboardEntries }: CommunityProps) {
   const handleBack = () => {
     community.closePost()
     navigate(pathOf('community'))
-    community.loadPosts(community.page, postType || undefined).then()
+    reload()
   }
 
   const handlePostTypeChange = (type: string) => {
@@ -58,19 +67,19 @@ export default function Community({ leaderboardEntries }: CommunityProps) {
   }
 
   const handlePageChange = (page: number) => {
-    community.loadPosts(page, postType || undefined).then()
+    reload(page)
   }
 
-  const handleCreatePost = async (title: string, body: string, type: string, youtubeVideoId?: string) => {
+  const handleCreatePost = async (input: PostInput) => {
     await ensureIdentity()
-    await createPost(title, body, type, youtubeVideoId)
+    await createPost(input)
     setView('list')
-    community.loadPosts(1, postType || undefined).then()
+    reload(1)
   }
 
   const handleDeleted = () => {
     navigate(pathOf('community'))
-    community.loadPosts(community.page, postType || undefined).then()
+    reload()
   }
 
   return (
@@ -85,20 +94,25 @@ export default function Community({ leaderboardEntries }: CommunityProps) {
           error={community.error}
           postType={postType}
           onPostTypeChange={handlePostTypeChange}
+          characters={characters}
+          onCharactersChange={setCharacters}
           onPageChange={handlePageChange}
           onSelectPost={handleSelectPost}
-          onRefresh={() => community.loadPosts(community.page, postType || undefined).then()}
+          onRefresh={() => reload()}
           onWrite={() => setView('create')}
           leaderboardEntries={leaderboardEntries}
         />
       )}
 
-      {mode === 'detail' && community.detailLoading && (
-        <p className="state-msg">로딩 중...</p>
-      )}
-      {mode === 'detail' && community.detailError && (
-        <p className="state-msg error">{community.detailError}</p>
-      )}
+      {/* The board was the last tab reporting its own states by hand: a bare
+          "로딩 중..." with no announced role, and a raw error string with no way
+          back. Both now go through the shared panel status, so a failed post
+          offers a retry the same way every other tab does. */}
+      {mode === 'detail' && statusBody(community.detailLoading, community.detailError, {
+        loadingMsg: '게시글을 불러오는 중',
+        onRetry: () => { if (openId != null) community.openPost(openId).then() },
+        skeleton: <ListSkeleton rows={3} label="게시글을 불러오는 중" />,
+      })}
       {mode === 'detail' && community.selectedPost && (
         <PostDetail
           key={community.selectedPost.id}
@@ -107,7 +121,7 @@ export default function Community({ leaderboardEntries }: CommunityProps) {
           onBack={handleBack}
           onRefresh={() => {
             community.refreshDetail()
-            community.loadPosts(community.page, postType || undefined).then()
+            reload()
           }}
           ensureIdentity={ensureIdentity}
           onDeleted={handleDeleted}
