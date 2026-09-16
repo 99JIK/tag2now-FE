@@ -148,6 +148,24 @@ select.input-base option { background: var(--color-bg-field); color: var(--color
 .char-cell-wl { color: var(--color-txt-faint); font-size: var(--text-3xs); font-weight: var(--weight-label); white-space: nowrap; }
 .char-cell-wl span { opacity: .7; }
 
+/* The sidebar profile card's variant: one narrow column, so the record stacks
+   under the rate instead of sitting beside it. Side by side they need 92px and
+   the card gives the cell 73px between 780 and ~1050px, which is exactly where
+   "329W 318L" was running out through the card's right edge. */
+.char-cell--compact { width: 100%; margin: 0; }
+.char-cell--compact .char-cell-meta { min-width: 0; }
+.char-cell--compact .char-cell-record { flex-direction: column; align-items: flex-start; gap: 0; line-height: 1.15; }
+/* Capped, not stretched to the card. `max-width: 100%` let the banner grow
+   with the sidebar and left a 150px Berserker over a 30px percentage --- the
+   art is a label on the figure, not the other way round. */
+.char-cell--compact .char-cell-rank { width: auto; max-width: 76px; height: auto; max-height: 22px; object-fit: contain; }
+/* One step apart, not two: the rate leads and the record follows it, and at
+   13px over 8px they read as unrelated lines rather than one record. */
+.char-cell--compact .char-cell-wr { font-size: var(--text-2xs); }
+.char-cell--compact .char-cell-wl { font-size: var(--text-4xs); }
+/* Nothing leaves the card, whatever a future cell puts in it. */
+.sidebar-profile-card { overflow: hidden; }
+
 /* ─── Empty state ─────────────────────────────────────────── */
 /* A panel with nothing in it still has to say something useful. The dashed box
    this replaces reported the absence and stopped there; these say which list is

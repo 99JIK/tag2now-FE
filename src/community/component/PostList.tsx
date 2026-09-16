@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { formatTimeAgo } from '@/shared/util/timeFormat'
 import CharacterGridPicker from '@/shared/components/CharacterGridPicker'
 import PostTypeBadge from './PostTypeBadge'
@@ -5,7 +6,7 @@ import type { LeaderboardEntry} from "@/shared/types";
 import { MAX_POST_CHARACTERS, POST_TYPES } from "@/community/types";
 import type {PostSummary} from "@/community/types";
 import AuthorBadge from './AuthorBadge'
-import { ChevronLeft, ChevronRight, MessageSquare, MessagesSquare, PenLine, RefreshCw, SlidersHorizontal, ThumbsDown, ThumbsUp } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, MessageSquare, MessagesSquare, PenLine, RefreshCw, SlidersHorizontal, ThumbsDown, ThumbsUp, Users } from 'lucide-react'
 
 interface PostListProps {
   posts: PostSummary[]
@@ -31,6 +32,7 @@ export default function PostList({
   postType, onPostTypeChange, characters, onCharactersChange,
   onPageChange, onSelectPost, onRefresh, onWrite, leaderboardEntries,
 }: PostListProps) {
+  const [pickerOpen, setPickerOpen] = useState(false)
   const totalPages = Math.max(1, Math.ceil(total / pageSize))
 
   return (
@@ -76,22 +78,47 @@ export default function PostList({
 
       {/* Filters the list by character, independently of the category above —
           the two used to be the same control, so narrowing to 공략 and
-          narrowing to Jin were mutually exclusive. */}
-      <div className="character-filter">
-        <CharacterGridPicker
-          selected={characters}
-          onToggle={(name) => onCharactersChange(
-            characters.includes(name)
-              ? characters.filter((entry) => entry !== name)
-              : characters.length >= MAX_POST_CHARACTERS ? characters : [...characters, name],
-          )}
-          max={MAX_POST_CHARACTERS}
-        />
+          narrowing to Jin were mutually exclusive.
+
+          Folded away until asked for, the way the leaderboard's picker already
+          is. Sixty portraits are taller than a phone screen: opening this tab
+          showed the filter and not one post, and the grid is a thing you reach
+          for occasionally while the posts are what you came for. */}
+      <div className="character-filter-bar">
+        <button
+          type="button"
+          className={`lb-char-toggle${characters.length > 0 ? ' is-active' : ''}`}
+          aria-expanded={pickerOpen}
+          aria-controls="community-character-picker"
+          aria-label={characters.length > 0 ? `캐릭터 필터: ${characters.join(', ')}` : '캐릭터 필터'}
+          onClick={() => setPickerOpen((open) => !open)}
+        >
+          <Users size={14} aria-hidden="true" />
+          <span>{characters.length > 0 ? characters.join(', ') : '캐릭터'}</span>
+          <ChevronDown size={14} aria-hidden="true" className={pickerOpen ? 'is-open' : undefined} />
+        </button>
+        {/* Clearing is its own control: with the grid folded away, deselecting
+            had no reachable UI. */}
+        {characters.length > 0 && (
+          <button type="button" className="btn-ghost" onClick={() => onCharactersChange([])}>해제</button>
+        )}
       </div>
+      {pickerOpen && (
+        <div id="community-character-picker" className="character-filter">
+          <CharacterGridPicker
+            selected={characters}
+            onToggle={(name) => onCharactersChange(
+              characters.includes(name)
+                ? characters.filter((entry) => entry !== name)
+                : characters.length >= MAX_POST_CHARACTERS ? characters : [...characters, name],
+            )}
+            max={MAX_POST_CHARACTERS}
+          />
+        </div>
+      )}
       {characters.length > 0 && (
         <p className="selected-characters" role="status">
           <strong>{characters.join(', ')}</strong> 관련 글만 표시 중
-          <button type="button" className="btn-ghost" onClick={() => onCharactersChange([])}>해제</button>
         </p>
       )}
 

@@ -12,38 +12,23 @@
      the full width instead, which is also where the longest hint sits. */
   .kpi-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
   .overview-grid { grid-template-columns: minmax(0,1fr); }
-  /* At ~290-320px a single row cannot hold the name and two rank banners side
-     by side without shortening the name to a few characters. So the row wraps:
-     rank number, name and figure take the top line at full width, and the two
-     characters sit beneath them. Nothing is dropped and nothing is truncated. */
-  .overview-rank-head { display: none; }
-  /* Placed by area here, so the desktop column tracks must not leak in. */
-  .overview-rank-row {
-    min-height: 0;
-    padding: 6px 8px;
-    grid-template-areas: "pos name name detail" "pos main sub .";
-    grid-template-columns: 18px minmax(0,1fr) minmax(0,1fr) auto;
-    gap: 4px 6px;
-  }
-  /* With no detail cell the trailing track has nothing to size to, and left
-     in place it squeezed the two portraits to half their width. Drop it. */
-  .overview-rank-list.has-no-detail .overview-rank-row {
-    grid-template-areas: "pos name name" "pos main sub";
-    grid-template-columns: 18px minmax(0,1fr) minmax(0,1fr);
-  }
-  /* The name sits on a 25px line, under the 44px the rest of the UI gives a
-     touch target. Vertical padding is what grows it: a positioned ::after
-     would be clipped away by the overflow the ellipsis needs, and the row is
-     tall enough to absorb the padding without changing its own height. */
-  .overview-rank-btn { padding-block: 10px; margin-block: -10px; }
-  .overview-rank-pos { grid-area: pos; align-self: center; }
-  .overview-rank-name { grid-area: name; }
-  .overview-rank-detail { grid-area: detail; }
-  .overview-rank-row .mini-char:nth-of-type(1) { grid-area: main; }
-  .overview-rank-row .mini-char:nth-of-type(2) { grid-area: sub; }
-  .overview-rank-row .mini-char { width: 100%; justify-content: flex-start; }
-  .mini-char-rank { max-width: 76px; }
-  .mini-char-portrait { height: 44px; }
+  /* The same one-line arrangement as the desktop row, on tighter tracks: #,
+     name over its figure, main, sub. It used to wrap to two lines and place
+     the characters by `:nth-of-type`, which never matched them --- every child
+     of the row is a <span>, so `:nth-of-type(1)` selected the position cell and
+     the two characters auto-placed into whatever cells were left. Measured at
+     412px: an 18px-wide main cell whose 62px rank banner painted across the sub
+     cell beside it.
+     Reading a summary row is the same job on a phone as on a desktop, so it is
+     now the same row. */
+  .overview-rank-row { min-height: 0; padding: 6px 8px; gap: 6px; grid-template-columns: 18px minmax(0,1fr) 92px 92px; }
+  .overview-rank-head { grid-template-columns: 18px minmax(0,1fr) 92px 92px; }
+  .overview-rank-list.has-no-detail .overview-rank-row,
+  .overview-rank-list.has-no-detail .overview-rank-head { grid-template-columns: 18px minmax(0,1fr) 92px 92px; }
+  /* Sized so a portrait and a banner fit the 92px track together. */
+  .mini-char { gap: 6px; }
+  .mini-char-portrait { height: 40px; }
+  .mini-char-rank { width: 56px; height: 25px; }
   .kpi-card-value { font-size: var(--text-lg); }
   .app-shell { padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
   /* 1fr for the brand, auto for the profile --- not the reverse. Under
@@ -186,11 +171,13 @@
   .weekly-ranking-table th:nth-child(5), .weekly-ranking-table td:nth-child(5) { width: 36%; }
   .weekly-ranking-table th:nth-child(4), .weekly-ranking-table td:nth-child(4), .weekly-ranking-table th:nth-child(6), .weekly-ranking-table td:nth-child(6) { display: none; }
   .ranking-table .char-td { min-width: 0; max-width: none; overflow: hidden; }
-  /* The raw W/L does not fit beside the portrait and banner at 393px — it was
-     clipping mid-number, which reads as a rendering fault rather than a
-     truncation. The win rate is the figure people compare, so it is the one
-     that stays; the full record is in the player's history panel. */
-  .char-cell-wl { display: none; }
+  /* The raw record stays, stacked under the rate rather than beside it. It
+     used to be hidden here: on one line the two clipped mid-number at 393px,
+     which reads as a rendering fault. Two lines fit, and "00% 000W 000L" is
+     what the table is for --- the rate alone is a summary of numbers the
+     reader came to see. */
+  .char-cell-record { flex-direction: column; align-items: flex-start; gap: 0; }
+  .char-cell-wl { font-size: var(--text-5xs); }
   /* The totals column is the first thing to go at 393px: the same numbers are
      in each character's cell, and the sort controls stay reachable. */
   .lb-total-col { display: none; }
@@ -215,10 +202,7 @@
   /* A margin of page stays visible around the dialog, so it reads as a popup
      rather than a screen of its own. */
   .history-backdrop { align-items: center; padding: 24px 16px; }
-  /* Capped to the screen, with the header and period picker pinned and only
-     the body scrolling --- the loaded record once ran past the screen and took
-     the whole backdrop with it. */
-  .history-dialog { display: flex; max-height: calc(100dvh - 48px); flex-direction: column; margin-block: auto; }
+  .history-dialog { margin-block: auto; }
   .history-header { min-height: 72px; padding: 12px; }
   .history-title-group div > p:last-child { display: none; }
   .history-toolbar { align-items: stretch; flex-direction: column; padding: 8px 12px; }
@@ -226,7 +210,7 @@
   .history-character-pair { margin-left: auto; }
   .history-period { width: 100%; }
   .history-period button { min-height: 38px; flex: 1; }
-  .history-body { min-height: 0; flex: 1 1 auto; overflow-y: auto; padding: 12px; }
+  .history-body { padding: 12px; }
   .history-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .history-content-grid { grid-template-columns: 1fr; }
   .history-section { min-height: 0; }

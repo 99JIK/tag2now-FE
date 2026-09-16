@@ -61,21 +61,18 @@
 .char-grid-name { display: block; overflow: hidden; padding: 3px 2px; background: color-mix(in srgb, var(--color-shade) 35%, transparent); color: var(--color-txt-dim); font-size: var(--text-5xs); font-weight: var(--weight-row); line-height: 1.2; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
 .char-grid-tile.is-active .char-grid-name { color: var(--color-primary-text); }
 
-/* 700px is where 23 columns stop being worth having: below it a track falls
-   under 30px and the portraits become unreadable smudges. Queried against the
-   picker rather than the window because the panel is what actually constrains
-   the grid — the same viewport gives it a different width on a tab with a
-   sidebar than on one without. */
-@container char-picker (min-width: 700px) {
-  .char-grid { grid-template-columns: repeat(var(--char-grid-columns), minmax(0, 1fr)); gap: 3px; }
-  /* The game's own gaps come back: they are what make the arrangement
-     recognisable rather than just three dense rows. */
-  .char-grid-gap { display: block; }
-  .char-grid-tile { border-radius: 3px; }
-  /* No room for a caption at ~31px, and a name clipped to four characters is
-     worse than none — `title` and `aria-label` still carry it. */
-  .char-grid-name { display: none; }
-}
+/* The game's own arrangement, when the picker is wide enough for it. Keyed off
+   a class rather than a `@container` query: the component also decides the
+   *order* the tiles render in — game order here, alphabetical when this class
+   is absent — and CSS cannot tell it which. See CharacterGridPicker. */
+.char-grid.is-game-layout { grid-template-columns: repeat(var(--char-grid-columns), minmax(0, 1fr)); gap: 3px; }
+/* The game's own gaps come back: they are what make the arrangement
+   recognisable rather than just three dense rows. */
+.char-grid.is-game-layout .char-grid-gap { display: block; }
+.char-grid.is-game-layout .char-grid-tile { border-radius: 3px; }
+/* No room for a caption at ~31px, and a name clipped to four characters is
+   worse than none — `title` and `aria-label` still carry it. */
+.char-grid.is-game-layout .char-grid-name { display: none; }
 
 /* ─── Match table ─────────────────────────────────────────── */
 /* Every name here opens a player's history, which nothing said: they rendered

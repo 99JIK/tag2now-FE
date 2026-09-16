@@ -14,6 +14,8 @@ import {
   UNTRANSPORTABLE_USERNAME_MSG,
 } from '@/shared/util/cookie'
 import PlayerHistoryPanel from './PlayerHistoryPanel'
+import RankImage from './RankImage'
+import { indexOfRank } from '@/reservation/reservationLabels'
 import CharCell from './CharCell'
 
 interface PlayerProfileCardProps {
@@ -47,6 +49,14 @@ export default function PlayerProfileCard({ leaderboardEntries, roomUsers = [] }
     : undefined
   const characters = [entry?.player_info?.main_char_info, entry?.player_info?.sub_char_info]
     .filter((character): character is CharInfo => !!character?.name)
+  /** The higher of the two, because a header has room for one banner and the
+   * one worth showing is the one they have climbed to. `indexOfRank` answers
+   * -1 for a rank this build has not heard of, which loses to any known one
+   * rather than winning by accident. */
+  const bestRank = characters
+    .map((character) => character.rank_info)
+    .filter((rank): rank is NonNullable<typeof rank> => !!rank?.name)
+    .sort((a, b) => indexOfRank(b.name) - indexOfRank(a.name))[0]
   const online = !!username && roomUsers.some(user =>
     (entry?.np_id && user.np_id === entry.np_id) || user.online_name === username,
   )
@@ -123,6 +133,11 @@ export default function PlayerProfileCard({ leaderboardEntries, roomUsers = [] }
           do the same thing, with a pencil alongside doing the only other
           thing --- three controls for two actions, and the one you would
           reach for first was the duplicate. */}
+      {/* The same byline a post row carries: rank banner, place, name. Signed
+          in, the header said only the name --- so the one place you are always
+          looking told you less about yourself than a comment you left. */}
+      <RankImage rankInfo={bestRank} className="author-badge-rank" />
+      {entry && <span className="author-badge-place">#{entry.rank}</span>}
       <button
         type="button"
         className="profile-name"
